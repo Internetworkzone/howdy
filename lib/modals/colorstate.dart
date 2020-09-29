@@ -6,15 +6,17 @@ class ColorState with ChangeNotifier {
   Color lightprimaryColor = purple;
   Color secondaryColor = white;
   Color bulbColor = black;
+  bool darkMode = false;
 
-  setColorMode(darkMode) {
+  setColorMode() {
+    darkMode = !darkMode;
     primaryColor = darkMode ? black : lightprimaryColor;
     secondaryColor = darkMode ? lightprimaryColor : white;
     bulbColor = darkMode ? white : black;
     notifyListeners();
   }
 
-  setColor({@required int colorNum, mode}) {
+  setColor({@required int colorNum}) {
     switch (colorNum) {
       case 1:
         lightprimaryColor = purple;
@@ -38,9 +40,10 @@ class ColorState with ChangeNotifier {
         lightprimaryColor = seaBlue;
         break;
     }
+    primaryColor = darkMode ? black : lightprimaryColor;
+    secondaryColor = darkMode ? lightprimaryColor : white;
+    bulbColor = darkMode ? white : black;
 
     notifyListeners();
-
-    setColorMode(mode);
   }
 }

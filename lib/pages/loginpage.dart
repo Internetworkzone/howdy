@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:howdy/modals/colorstate.dart';
 import 'package:howdy/modals/constants.dart';
+import 'package:howdy/modals/userstate.dart';
 import 'package:howdy/pages/homepage.dart';
 import 'package:howdy/pages/signup_page.dart';
 import 'package:provider/provider.dart';
@@ -16,22 +17,10 @@ class _LoginPageState extends State<LoginPage> {
   String password;
   String loggedInUser;
 
-  loginUser() async {
-    try {
-      await auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-
-      Navigator.push(context, MaterialPageRoute(builder: (_) => HomePage()));
-    } catch (e) {
-      print(e);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final color = Provider.of<ColorState>(context);
+    final user = Provider.of<UserState>(context);
     return Scaffold(
       appBar: AppBar(
         backgroundColor: color.primaryColor,
@@ -72,7 +61,9 @@ class _LoginPageState extends State<LoginPage> {
                     style: TextStyle(fontSize: 40),
                   ),
                   color: white,
-                  onPressed: () => loginUser(),
+                  onPressed: () {
+                    user.signInUser(email: email, password: password);
+                  },
                   shape: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(30),
                   ),

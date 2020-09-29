@@ -14,7 +14,7 @@ description: A new Flutter project.
 version: 1.0.0+1
 
 environment:
-  sdk: ">=2.1.0 <3.0.0"
+  sdk: ">=2.8.0 <3.0.0"
 
 dependencies:
   flutter:
@@ -28,6 +28,8 @@ dependencies:
   firebase_auth:
   cloud_firestore:
   provider: ^4.0.1
+  swipeable: ^1.0.2
+  swipedetector: ^1.2.0
     
 
 dev_dependencies:

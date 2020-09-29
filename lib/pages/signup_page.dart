@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:howdy/modals/colorstate.dart';
 import 'package:howdy/modals/constants.dart';
+import 'package:howdy/modals/userstate.dart';
 import 'package:howdy/pages/homepage.dart';
 import 'package:provider/provider.dart';
 import 'package:howdy/widget/textformwidget.dart';
@@ -19,30 +20,11 @@ class _SignupPageState extends State<SignupPage> {
   FirebaseAuth auth = FirebaseAuth.instance;
   Firestore firestore = Firestore.instance;
 
-  Future registerUser() async {
-    try {
-      final signupUser = await auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-
-      if (signupUser.user.uid != null) {
-        firestore.collection('users').document(signupUser.user.uid).setData({
-          'id': signupUser.user.uid,
-          'name': name,
-          'email': email,
-          'timestamp': Timestamp.now(),
-        });
-      }
-      Navigator.push(context, MaterialPageRoute(builder: (_) => HomePage()));
-    } catch (e) {
-      print(e);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final color = Provider.of<ColorState>(context);
+    final user = Provider.of<UserState>(context, listen: false);
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: color.primaryColor,
@@ -91,7 +73,10 @@ class _SignupPageState extends State<SignupPage> {
                     style: TextStyle(fontSize: 40),
                   ),
                   color: white,
-                  onPressed: () => registerUser(),
+                  onPressed: () {
+                    user.signUpUser(
+                        email: email, password: password, name: name);
+                  },
                   shape: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(30),
                   ),

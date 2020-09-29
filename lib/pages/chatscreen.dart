@@ -50,18 +50,20 @@ class _ChatScreenState extends State<ChatScreen> {
   getCurrentUserDetails() async {
     final user = Provider.of<UserState>(context, listen: false);
     if (user.currentUserId != null) {
-      await firestore
-          .collection('users')
-          .document(user.currentUserId)
-          .get()
-          .then((DocumentSnapshot doc) {
-        setState(() {
-          currentUserName = doc.data['name'];
+      try {
+        await firestore
+            .collection('users')
+            .document(user.currentUserId)
+            .get()
+            .then((DocumentSnapshot doc) {
+          setState(() {
+            currentUserName = doc.data['name'];
+          });
         });
-      });
+      } catch (e) {}
     }
     try {
-      getChatlist().then((onValue) {
+      await getChatlist().then((onValue) {
         setState(() {
           chatList = onValue;
         });
@@ -69,8 +71,6 @@ class _ChatScreenState extends State<ChatScreen> {
     } catch (e) {
       print(e);
     }
-
-    print('name $currentUserName');
   }
 
   @override
@@ -84,7 +84,9 @@ class _ChatScreenState extends State<ChatScreen> {
     final color = Provider.of<ColorState>(context, listen: false);
 
     if (Provider.of<UserState>(context, listen: false).currentUserId == null) {
-      return Center(child: Text('Log in to see your chat'));
+      return Center(
+          child: Text('Log in to see your chat',
+              style: TextStyle(color: color.secondaryColor, fontSize: 20)));
     } else {
       return StreamBuilder(
         stream: chatList,
@@ -94,7 +96,6 @@ class _ChatScreenState extends State<ChatScreen> {
               child: CircularProgressIndicator(backgroundColor: purple),
             );
           }
-          print(snapshot.data.documents.length);
           return ListView.builder(
             itemCount: snapshot.data.documents.length,
             itemBuilder: (context, index) {
