@@ -1,7 +1,9 @@
 import 'dart:async';
 
+import 'package:bubble/bubble.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:howdy/modals/colorstate.dart';
 import 'package:howdy/modals/constants.dart';
 import 'package:provider/provider.dart';
@@ -26,6 +28,7 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
   String message = '';
   Stream<QuerySnapshot> allMessages;
   TextEditingController controller = TextEditingController();
+  TextInputConnection connection;
   bool isRecording = false;
   bool isDeleting = false;
   AnimationController slideController;
@@ -44,9 +47,10 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
   String replyToMessage;
   String replyToAuthor;
   bool isFocus = false;
-  FocusNode focusNode = FocusNode();
-  Animation<double> scaleSize;
-  AnimationController scaleSizeController;
+  Animation<Offset> iconSlide;
+  AnimationController iconSlideController;
+  FocusNode focus = FocusNode();
+  bool isReplying = false;
 
   Future getChatMessage() async {
     return firestore
@@ -71,6 +75,8 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
       'author': true,
       'timestamp': Timestamp.now(),
       'authorName': widget.currentUserName,
+      'replyTo': replyToAuthor,
+      'replyFor': replyToMessage,
     });
     await firestore
         .collection('chat')
@@ -83,6 +89,8 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
       'author': false,
       'timestamp': Timestamp.now(),
       'authorName': widget.currentUserName,
+      'replyTo': replyToAuthor,
+      'replyFor': replyToMessage,
     });
 
     await firestore
@@ -149,12 +157,12 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
       end: Offset.zero,
     ).animate(AnimationController(vsync: this));
     updateReplySlideMovement();
-    scaleSizeController = AnimationController(
-      vsync: this,
-      duration: Duration(seconds: 5),
-    );
-
-    updateScaleAniamtion();
+    iconSlideController =
+        AnimationController(vsync: this, duration: Duration(seconds: 1));
+    iconSlide = Tween(
+      begin: Offset(-10, 0),
+      end: Offset.zero,
+    ).animate(iconSlideController);
   }
 
   onCancelRecording() async {
@@ -180,8 +188,6 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
     setState(() {
       timer.start();
     });
-
-    print('timer is ${timer.elapsed}');
 
     scaleController.forward();
     setState(() {
@@ -211,26 +217,19 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
 
   Future<void> _handleDragEnd(
       DragEndDetails details, String author, String replyMessage) async {
+    double prevPosotion = dragPosition;
     dragPosition = 0.0;
     replySlideController.fling(velocity: -1.1);
-    setState(() {
-      replyToAuthor = author;
-      replyToMessage = replyMessage;
-    });
-    updateScaleAniamtion();
-    focusNode.requestFocus();
-    focusNode.addListener(() {
-      if (focusNode.hasFocus) {
-        print('focussed');
-        focusNode.requestFocus();
-      }
-    });
-
-    print('re $replyToMessage');
-  }
-
-  updateScaleAniamtion() {
-    scaleSize = scaleController.drive(Tween(begin: 0, end: 10));
+    print('po is ${context.size.width / 8}');
+    if (prevPosotion > context.size.width / 8) {
+      setState(() {
+        replyToAuthor = author;
+        replyToMessage = replyMessage;
+        isReplying = true;
+      });
+      SystemChannels.textInput.invokeMethod('TextInput.show');
+      focus.requestFocus();
+    }
   }
 
   @override
@@ -263,92 +262,128 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
                           itemBuilder: (context, index) {
                             bool author =
                                 snapshot.data.documents[index].data['author'];
+                            bool isPreviousByAuthor =
+                                index == snapshot.data.documents.length - 1
+                                    ? false
+                                    : snapshot.data.documents[index]
+                                            .data['authorName'] ==
+                                        snapshot.data.documents[index + 1]
+                                            .data['authorName'];
+                            String replyTo =
+                                snapshot.data.documents[index].data['replyTo'];
+                            String replyFor =
+                                snapshot.data.documents[index].data['replyFor'];
+
                             String authorName = snapshot
                                 .data.documents[index].data['authorName'];
                             return Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Padding(
-                                padding: author
-                                    ? EdgeInsets.only(left: 30)
-                                    : EdgeInsets.only(right: 30),
-                                child: GestureDetector(
-                                  onHorizontalDragStart: (_) {
-                                    setState(() {
-                                      selectedIndex = index;
-                                    });
-                                  },
-                                  onHorizontalDragUpdate: selectedIndex == index
-                                      ? _handleDragUpdate
-                                      : null,
-                                  onHorizontalDragEnd: (details) {
-                                    if (selectedIndex == index) {
-                                      _handleDragEnd(
-                                          details,
-                                          author ? 'You' : authorName,
-                                          snapshot.data.documents[index]
-                                              .data['message']);
-                                    }
-                                  },
-                                  child: SlideTransition(
-                                    position: selectedIndex == index
-                                        ? replySlide
-                                        : defaultPosition,
-                                    child: Row(
-                                      mainAxisAlignment: author
-                                          ? MainAxisAlignment.end
-                                          : MainAxisAlignment.start,
-                                      children: [
-                                        Material(
-                                          color: color.secondaryColor,
-                                          child: Padding(
-                                            padding: author
-                                                ? EdgeInsets.only(
-                                                    top: 2,
-                                                    left: 20,
-                                                    right: 10,
-                                                    bottom: 8,
-                                                  )
-                                                : EdgeInsets.only(
-                                                    top: 2,
-                                                    left: 10,
-                                                    right: 20,
-                                                    bottom: 8,
+                              padding: EdgeInsets.fromLTRB(
+                                  author ? 40 : 5, 2, !author ? 40 : 5, 2),
+                              child: GestureDetector(
+                                onHorizontalDragStart: (_) {
+                                  setState(() {
+                                    selectedIndex = index;
+                                  });
+                                },
+                                onHorizontalDragUpdate: selectedIndex == index
+                                    ? _handleDragUpdate
+                                    : null,
+                                onHorizontalDragEnd: (details) {
+                                  if (selectedIndex == index) {
+                                    _handleDragEnd(
+                                        details,
+                                        author ? 'You' : authorName,
+                                        snapshot.data.documents[index]
+                                            .data['message']);
+                                  }
+                                },
+                                child: SlideTransition(
+                                  position: selectedIndex == index
+                                      ? replySlide
+                                      : defaultPosition,
+                                  child: Container(
+                                    child: Bubble(
+                                      alignment: author
+                                          ? Alignment.topRight
+                                          : Alignment.topLeft,
+                                      nip: isPreviousByAuthor
+                                          ? BubbleNip.no
+                                          : author
+                                              ? BubbleNip.rightTop
+                                              : BubbleNip.leftTop,
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          replyTo != null
+                                              ? Container(
+                                                  // width: double.infinity,
+                                                  decoration: BoxDecoration(
+                                                      color: Color(0x22909090),
+                                                      border: Border(
+                                                          left: BorderSide(
+                                                        width: 5,
+                                                        color:
+                                                            color.primaryColor,
+                                                      ))),
+                                                  padding: EdgeInsets.symmetric(
+                                                      horizontal: 10,
+                                                      vertical: 6),
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Text(
+                                                        replyTo,
+                                                        style: TextStyle(
+                                                            fontSize: 20,
+                                                            color: color
+                                                                .primaryColor),
+                                                      ),
+                                                      Text(
+                                                        replyFor,
+                                                        style: TextStyle(
+                                                            fontSize: 16),
+                                                      )
+                                                    ],
                                                   ),
-                                            child: Column(
-                                              crossAxisAlignment: author
-                                                  ? CrossAxisAlignment.end
-                                                  : CrossAxisAlignment.start,
-                                              children: <Widget>[
-                                                Text(
-                                                  author ? 'You' : authorName,
-                                                ),
-                                                Text(
+                                                )
+                                              : SizedBox(),
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.end,
+                                            children: [
+                                              Flexible(
+                                                child: Text(
                                                   snapshot.data.documents[index]
                                                       .data['message'],
                                                   style:
                                                       TextStyle(fontSize: 25),
                                                 ),
-                                              ],
-                                            ),
-                                          ),
-                                          borderRadius: author
-                                              ? BorderRadius.only(
-                                                  topLeft: Radius.circular(30),
-                                                  bottomRight:
-                                                      Radius.circular(20),
-                                                  bottomLeft:
-                                                      Radius.circular(30),
-                                                )
-                                              : BorderRadius.only(
-                                                  topRight: Radius.circular(30),
-                                                  bottomRight:
-                                                      Radius.circular(20),
-                                                  bottomLeft:
-                                                      Radius.circular(20),
+                                              ),
+                                              Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 8.0),
+                                                child: Text(
+                                                  '5:30 PM',
                                                 ),
-                                          elevation: 5,
-                                        ),
-                                      ],
+                                              ),
+                                              author
+                                                  ? Icon(
+                                                      Icons.done_all_sharp,
+                                                      size: 23,
+                                                      color: Colors.blue,
+                                                    )
+                                                  : Container(),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -366,13 +401,20 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
                             Expanded(
                               flex: 5,
                               child: Material(
-                                borderRadius: BorderRadius.circular(30),
+                                borderRadius: BorderRadius.only(
+                                  topLeft:
+                                      Radius.circular(isReplying ? 15 : 25),
+                                  topRight:
+                                      Radius.circular(isReplying ? 15 : 25),
+                                  bottomLeft: Radius.circular(25),
+                                  bottomRight: Radius.circular(25),
+                                ),
                                 child: Padding(
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 12),
                                   child: Column(
                                     children: [
-                                      replyToMessage != null
+                                      isReplying
                                           ? Padding(
                                               padding: const EdgeInsets.only(
                                                   top: 20.0),
@@ -430,6 +472,7 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
                                                       setState(() {
                                                         replyToAuthor = null;
                                                         replyToMessage = null;
+                                                        isReplying = false;
                                                       });
                                                     },
                                                   ),
@@ -476,7 +519,8 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
                                           ),
                                           Flexible(
                                             child: TextField(
-                                              focusNode: focusNode,
+                                              maxLines: null,
+                                              focusNode: focus,
                                               controller: controller,
                                               decoration: InputDecoration(
                                                 border: InputBorder.none,
@@ -494,7 +538,6 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
                                                 setState(() {
                                                   message = input;
                                                 });
-                                                print('oo is $message');
                                               },
                                             ),
                                           ),
@@ -572,9 +615,14 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
                                   onTap: () async {
                                     if (message.length >= 1) {
                                       controller.clear();
+                                      setState(() {
+                                        isReplying = false;
+                                      });
                                       await createChat();
                                       setState(() {
                                         message = '';
+                                        replyToMessage = null;
+                                        replyToAuthor = null;
                                       });
                                     }
                                   },

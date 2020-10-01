@@ -28,8 +28,8 @@ dependencies:
   firebase_auth:
   cloud_firestore:
   provider: ^4.0.1
-  swipeable: ^1.0.2
-  swipedetector: ^1.2.0
+  bubble: ^1.1.9+1
+
     
 
 dev_dependencies:
