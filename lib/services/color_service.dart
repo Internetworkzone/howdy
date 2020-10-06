@@ -1,23 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:howdy/modals/constants.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class ColorState with ChangeNotifier {
+class ColorId {
+  int purple = 1;
+  int lightOrange = 2;
+  int pink = 3;
+  int blue = 4;
+  int green = 5;
+  int greyBlue = 6;
+  int seaBlue = 7;
+}
+
+class ColorService extends ChangeNotifier {
   Color primaryColor = purple;
   Color lightprimaryColor = purple;
   Color secondaryColor = white;
   Color bulbColor = black;
   bool darkMode = false;
 
-  setColorMode() {
+  setColorMode() async {
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+
     darkMode = !darkMode;
     primaryColor = darkMode ? black : lightprimaryColor;
     secondaryColor = darkMode ? lightprimaryColor : white;
     bulbColor = darkMode ? white : black;
     notifyListeners();
+    preferences.setBool('isDarkMode', darkMode);
+    print('called set darkmode');
+    print('color is $primaryColor');
   }
 
-  setColor({@required int colorNum}) {
-    switch (colorNum) {
+  setColor(int colorId) async {
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+
+    switch (colorId) {
       case 1:
         lightprimaryColor = purple;
         break;
@@ -40,10 +58,12 @@ class ColorState with ChangeNotifier {
         lightprimaryColor = seaBlue;
         break;
     }
+
     primaryColor = darkMode ? black : lightprimaryColor;
     secondaryColor = darkMode ? lightprimaryColor : white;
     bulbColor = darkMode ? white : black;
 
+    preferences.setInt('color', colorId);
     notifyListeners();
   }
 }

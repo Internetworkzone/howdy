@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:howdy/main.dart';
-import 'package:howdy/modals/colorstate.dart';
-import 'package:howdy/modals/userstate.dart';
+import 'package:howdy/modals/user.dart';
+import 'package:howdy/services/auth_service.dart';
+import 'package:howdy/services/color_service.dart';
+import 'package:howdy/services/user_service.dart';
 import 'package:provider/provider.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -12,8 +13,8 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
-    final color = Provider.of<ColorState>(context, listen: false);
-    final user = Provider.of<UserState>(context, listen: false);
+    final color = Provider.of<ColorService>(context, listen: false);
+    User user = Provider.of<UserService>(context, listen: false).user;
 
     return Scaffold(
       appBar: AppBar(
@@ -30,13 +31,17 @@ class _ProfilePageState extends State<ProfilePage> {
                 'check',
                 style: TextStyle(color: color.secondaryColor, fontSize: 25),
               ),
-              onPressed: () => user.getUserDetail()),
+              onPressed: () {
+                setState(() {
+                  // user.getUserDetail();
+                });
+              }),
           Text(
-            user.currentUserName ?? 'Not found',
+            user.name ?? 'Not found',
             style: TextStyle(color: color.primaryColor, fontSize: 25),
           ),
           Text(
-            user.currentUserEmailId,
+            user.email,
             style: TextStyle(color: color.primaryColor, fontSize: 25),
           ),
           Center(
@@ -48,7 +53,10 @@ class _ProfilePageState extends State<ProfilePage> {
                   'Log Out',
                   style: TextStyle(color: color.secondaryColor, fontSize: 25),
                 ),
-                onPressed: () => user.signout()),
+                onPressed: () {
+                  AuthService().signOutUser();
+                  Navigator.pop(context);
+                }),
           ),
         ],
       ),

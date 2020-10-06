@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:howdy/modals/colorstate.dart';
-import 'package:howdy/modals/userstate.dart';
+import 'package:howdy/modals/user.dart';
 import 'package:howdy/pages/chatscreen.dart';
 import 'package:howdy/pages/groupscreen.dart';
 import 'package:howdy/pages/loginpage.dart';
 import 'package:howdy/pages/people.dart';
 import 'package:howdy/pages/profilepage.dart';
+import 'package:howdy/services/color_service.dart';
+import 'package:howdy/services/user_service.dart';
 import 'package:howdy/widget/appbaricon.dart';
 import 'package:howdy/widget/colorpallette.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -23,7 +25,7 @@ class _HomePageState extends State<HomePage>
   // bool showColorPalette = false;
 
   AppBar setAppbar() {
-    final color = Provider.of<ColorState>(context, listen: false);
+    final color = Provider.of<ColorService>(context, listen: false);
 
     if (appbarState == 1) {
       return AppBar(
@@ -105,9 +107,9 @@ class _HomePageState extends State<HomePage>
   ];
 
   void gotoProfile() {
-    final user = Provider.of<UserState>(context, listen: false);
+    User user = Provider.of<UserService>(context, listen: false).user;
 
-    if (user.currentUserId == null) {
+    if (user.uid == null) {
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -129,28 +131,42 @@ class _HomePageState extends State<HomePage>
     super.initState();
     tabController =
         TabController(vsync: this, initialIndex: 0, length: mytab.length);
+    getUserDetails();
   }
 
-  showColorPallete(color) {
+  showColorPallete(ColorService color) {
     return showDialog(
       barrierColor: Colors.transparent,
       context: context,
       builder: (_) => ColorPallete(
-        ontap1: () => color.setColor(colorNum: 1),
-        ontap2: () => color.setColor(colorNum: 2),
-        ontap3: () => color.setColor(colorNum: 3),
-        ontap4: () => color.setColor(colorNum: 4),
-        ontap5: () => color.setColor(colorNum: 5),
-        ontap6: () => color.setColor(colorNum: 6),
-        ontap7: () => color.setColor(colorNum: 7),
+        ontap1: () => color.setColor(ColorId().purple),
+        ontap2: () => color.setColor(ColorId().lightOrange),
+        ontap3: () => color.setColor(ColorId().pink),
+        ontap4: () => color.setColor(ColorId().blue),
+        ontap5: () => color.setColor(ColorId().green),
+        ontap6: () => color.setColor(ColorId().greyBlue),
+        ontap7: () => color.setColor(ColorId().seaBlue),
         palletteColor: color.bulbColor,
       ),
     );
   }
 
+  getUserDetails() async {
+    UserService userService = UserService();
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    String uid = preferences.getString('uid');
+    bool dark = preferences.getBool('isDarkMode');
+    int color = preferences.getInt('color');
+    Provider.of<ColorService>(context, listen: false).darkMode = dark ?? false;
+    Provider.of<ColorService>(context, listen: false).setColor(color ?? 1);
+    Provider.of<UserService>(context, listen: false).user =
+        await userService.updateUser(uid);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final color = Provider.of<ColorState>(context);
+    final color = Provider.of<ColorService>(context);
+
     return Scaffold(
       backgroundColor: color.primaryColor,
       appBar: setAppbar(),

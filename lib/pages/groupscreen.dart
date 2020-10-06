@@ -1,9 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:howdy/modals/colorstate.dart';
 import 'package:howdy/modals/constants.dart';
-import 'package:howdy/modals/userstate.dart';
+import 'package:howdy/modals/user.dart';
 import 'package:howdy/pages/groupchatroom.dart';
+import 'package:howdy/services/color_service.dart';
+import 'package:howdy/services/user_service.dart';
 import 'package:provider/provider.dart';
 
 class GroupScreen extends StatefulWidget {
@@ -18,7 +19,7 @@ class _GroupScreenState extends State<GroupScreen> {
   bool isJoined = false;
 
   showGroupDialog() {
-    final color = Provider.of<ColorState>(context, listen: false);
+    final color = Provider.of<ColorService>(context, listen: false);
     return showDialog(
       context: context,
       child: SimpleDialog(
@@ -75,23 +76,19 @@ class _GroupScreenState extends State<GroupScreen> {
   }
 
   Future<QuerySnapshot> getGroupList() async {
-    if (currentUserName != null) {
-      try {
-        return await firestore
-            .collection('groups')
-            .orderBy('groupName', descending: false)
-            .getDocuments();
-      } catch (e) {}
-    }
+    return await firestore
+        .collection('groups')
+        .orderBy('groupName', descending: false)
+        .getDocuments();
   }
 
   getCurrentUserDetails() async {
-    final user = Provider.of<UserState>(context, listen: false);
+    User user = Provider.of<UserService>(context, listen: false).user;
     try {
-      if (user.currentUserId != null) {
+      if (user.uid != null) {
         await firestore
             .collection('users')
-            .document(user.currentUserId)
+            .document(user.uid)
             .get()
             .then((DocumentSnapshot doc) {
           setState(() {
@@ -139,7 +136,7 @@ class _GroupScreenState extends State<GroupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final color = Provider.of<ColorState>(context);
+    final color = Provider.of<ColorService>(context);
     return Scaffold(
       backgroundColor: color.primaryColor,
       body: Stack(

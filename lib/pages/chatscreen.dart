@@ -1,9 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:howdy/modals/colorstate.dart';
 import 'package:howdy/modals/constants.dart';
-import 'package:howdy/modals/userstate.dart';
+import 'package:howdy/modals/user.dart';
 import 'package:howdy/pages/chatroom.dart';
+import 'package:howdy/services/chat_service.dart';
+import 'package:howdy/services/color_service.dart';
+import 'package:howdy/services/user_service.dart';
 import 'package:provider/provider.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -15,81 +17,41 @@ class _ChatScreenState extends State<ChatScreen> {
   Stream<QuerySnapshot> chatList;
   String currentUserName;
   String currentUserId;
+  ChatService chatService = ChatService();
 
-  goToChat({name, id}) {
-    final user = Provider.of<UserState>(context, listen: false);
+  goToChat({name, id, userId}) {
+    User user = Provider.of<UserService>(context).user;
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => ChatRoom(
-          currentUserId: user.currentUserId,
+          currentUserId: user.uid,
           currentUserName: currentUserName,
-          toUserId: id,
+          toUserId: userId,
           toUserName: name,
+          chatId: id,
         ),
       ),
     );
   }
 
-  Future getChatlist() async {
-    final user = Provider.of<UserState>(context, listen: false);
-    if (user.currentUserId != null) {
-      try {
-        return firestore
-            .collection('chatlist')
-            .document(user.currentUserId)
-            .collection(currentUserName)
-            .orderBy('timestamp', descending: true)
-            .snapshots();
-      } catch (e) {
-        print(e);
-      }
-    }
-  }
-
-  getCurrentUserDetails() async {
-    final user = Provider.of<UserState>(context, listen: false);
-    if (user.currentUserId != null) {
-      try {
-        await firestore
-            .collection('users')
-            .document(user.currentUserId)
-            .get()
-            .then((DocumentSnapshot doc) {
-          setState(() {
-            currentUserName = doc.data['name'];
-          });
-        });
-      } catch (e) {}
-    }
-    try {
-      await getChatlist().then((onValue) {
-        setState(() {
-          chatList = onValue;
-        });
-      });
-    } catch (e) {
-      print(e);
-    }
-  }
-
   @override
   void initState() {
     super.initState();
-    getCurrentUserDetails();
   }
 
   @override
   Widget build(BuildContext context) {
-    final color = Provider.of<ColorState>(context, listen: false);
+    final color = Provider.of<ColorService>(context, listen: false);
+    User user = Provider.of<UserService>(context).user;
 
-    if (Provider.of<UserState>(context, listen: false).currentUserId == null) {
+    if (user.uid == null) {
       return Center(
           child: Text('Log in to see your chat',
               style: TextStyle(color: color.secondaryColor, fontSize: 20)));
     } else {
       return StreamBuilder(
-        stream: chatList,
+        stream: chatService.getChatList(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return Center(
@@ -99,10 +61,23 @@ class _ChatScreenState extends State<ChatScreen> {
           return ListView.builder(
             itemCount: snapshot.data.documents.length,
             itemBuilder: (context, index) {
-              String name = snapshot.data.documents[index].data['name'];
+              String name;
+              String userId;
               String id = snapshot.data.documents[index].documentID;
+              List<dynamic> membersName =
+                  snapshot.data.documents[index].data['membersName'];
+              List<dynamic> membersId =
+                  snapshot.data.documents[index].data['membersId'];
+
+              if (membersName[0] == user.name) {
+                name = membersName[1];
+                userId = membersId[1];
+              } else {
+                name = membersName[0];
+                userId = membersId[0];
+              }
               String message =
-                  snapshot.data.documents[index].data['lastmessage'];
+                  snapshot.data.documents[index].data['lastMessage'];
 
               return Card(
                 color: color.primaryColor,
@@ -121,7 +96,11 @@ class _ChatScreenState extends State<ChatScreen> {
                       fontSize: 18,
                     ),
                   ),
-                  onTap: () => goToChat(name: name, id: id),
+                  onTap: () => goToChat(
+                    name: name,
+                    id: id,
+                    userId: userId,
+                  ),
                 ),
                 elevation: 0,
               );

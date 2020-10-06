@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:howdy/modals/colorstate.dart';
 import 'package:howdy/modals/constants.dart';
-import 'package:howdy/modals/userstate.dart';
-import 'package:howdy/pages/homepage.dart';
 import 'package:howdy/pages/signup_page.dart';
+import 'package:howdy/services/auth_service.dart';
+import 'package:howdy/services/color_service.dart';
 import 'package:provider/provider.dart';
 import 'package:howdy/widget/textformwidget.dart';
 
@@ -19,8 +18,7 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    final color = Provider.of<ColorState>(context);
-    final user = Provider.of<UserState>(context);
+    final color = Provider.of<ColorService>(context);
     return Scaffold(
       appBar: AppBar(
         backgroundColor: color.primaryColor,
@@ -62,7 +60,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   color: white,
                   onPressed: () {
-                    user.signInUser(email: email, password: password);
+                    AuthService().signInUser(email, password);
                   },
                   shape: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(30),

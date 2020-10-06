@@ -29,6 +29,7 @@ dependencies:
   cloud_firestore:
   provider: ^4.0.1
   bubble: ^1.1.9+1
+  shared_preferences:
 
     
 

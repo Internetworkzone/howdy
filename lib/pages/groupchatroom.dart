@@ -1,8 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:howdy/modals/colorstate.dart';
 import 'package:howdy/modals/constants.dart';
-import 'package:howdy/services/authservice.dart';
+import 'package:howdy/services/color_service.dart';
 import 'package:provider/provider.dart';
 
 class GroupChatRoom extends StatefulWidget {
@@ -61,7 +60,7 @@ class _ChatRoomState extends State<GroupChatRoom> {
 
   @override
   Widget build(BuildContext context) {
-    final color = Provider.of<ColorState>(context);
+    final color = Provider.of<ColorService>(context);
 
     return Scaffold(
       backgroundColor: color.primaryColor,

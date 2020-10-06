@@ -1,10 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:howdy/modals/colorstate.dart';
 import 'package:howdy/modals/constants.dart';
-import 'package:howdy/modals/userstate.dart';
 import 'package:howdy/pages/chatroom.dart';
 import 'package:howdy/pages/loginpage.dart';
+import 'package:howdy/services/color_service.dart';
+import 'package:howdy/services/user_service.dart';
 import 'package:provider/provider.dart';
 
 class PeopleScreen extends StatefulWidget {
@@ -17,46 +17,13 @@ class _PeopleScreenState extends State<PeopleScreen> {
   String currentUserId;
   String currentUserName;
 
-  Future getUserList() async {
-    try {
-      return firestore
-          .collection('users')
-          .orderBy('name', descending: false)
-          .snapshots();
-    } catch (e) {}
-  }
-
-  getCurrentUserDetails() async {
-    final user = Provider.of<UserState>(context, listen: false);
-    try {
-      if (user.currentUserId != null) {
-        await firestore
-            .collection('users')
-            .document(user.currentUserId)
-            .get()
-            .then((DocumentSnapshot doc) {
-          setState(() {
-            currentUserName = doc.data['name'];
-            currentUserId = doc.data['id'].toString();
-          });
-        });
-      }
-    } catch (e) {}
-  }
-
   @override
   void initState() {
     super.initState();
-    getCurrentUserDetails();
-    getUserList().then((onValue) {
-      setState(() {
-        userList = onValue;
-      });
-    });
   }
 
   gotoChatRoom({userName, userId}) {
-    if (Provider.of<UserState>(context, listen: false).currentUserId != null) {
+    if (Provider.of<UserService>(context, listen: false).user.uid != null) {
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -80,10 +47,10 @@ class _PeopleScreenState extends State<PeopleScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final color = Provider.of<ColorState>(context, listen: false);
+    final color = Provider.of<ColorService>(context, listen: false);
 
-    return StreamBuilder(
-      stream: userList,
+    return FutureBuilder(
+      future: UserService().getUsersList(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return Center(

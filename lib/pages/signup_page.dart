@@ -1,10 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:howdy/modals/colorstate.dart';
 import 'package:howdy/modals/constants.dart';
-import 'package:howdy/modals/userstate.dart';
-import 'package:howdy/pages/homepage.dart';
+import 'package:howdy/services/auth_service.dart';
+import 'package:howdy/services/color_service.dart';
 import 'package:provider/provider.dart';
 import 'package:howdy/widget/textformwidget.dart';
 
@@ -22,8 +21,7 @@ class _SignupPageState extends State<SignupPage> {
 
   @override
   Widget build(BuildContext context) {
-    final color = Provider.of<ColorState>(context);
-    final user = Provider.of<UserState>(context, listen: false);
+    final color = Provider.of<ColorService>(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -74,8 +72,9 @@ class _SignupPageState extends State<SignupPage> {
                   ),
                   color: white,
                   onPressed: () {
-                    user.signUpUser(
-                        email: email, password: password, name: name);
+                    AuthService().createNewAccount(email, password, name);
+
+                    Navigator.pop(context);
                   },
                   shape: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(30),

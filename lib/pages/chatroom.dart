@@ -1,11 +1,13 @@
-import 'dart:async';
-
 import 'package:bubble/bubble.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:howdy/modals/colorstate.dart';
+import 'package:howdy/modals/chat.dart';
 import 'package:howdy/modals/constants.dart';
+import 'package:howdy/modals/user.dart';
+import 'package:howdy/services/chat_service.dart';
+import 'package:howdy/services/color_service.dart';
+import 'package:howdy/services/user_service.dart';
 import 'package:provider/provider.dart';
 
 class ChatRoom extends StatefulWidget {
@@ -14,11 +16,13 @@ class ChatRoom extends StatefulWidget {
     @required this.toUserId,
     @required this.currentUserName,
     @required this.currentUserId,
+    this.chatId,
   });
   final String toUserName;
   final String toUserId;
   final String currentUserName;
   final String currentUserId;
+  final String chatId;
 
   @override
   _ChatRoomState createState() => _ChatRoomState();
@@ -26,7 +30,6 @@ class ChatRoom extends StatefulWidget {
 
 class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
   String message = '';
-  Stream<QuerySnapshot> allMessages;
   TextEditingController controller = TextEditingController();
   TextInputConnection connection;
   bool isRecording = false;
@@ -46,84 +49,18 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
   int selectedIndex;
   String replyToMessage;
   String replyToAuthor;
+  int chatLength;
   bool isFocus = false;
   Animation<Offset> iconSlide;
   AnimationController iconSlideController;
   FocusNode focus = FocusNode();
   bool isReplying = false;
 
-  Future getChatMessage() async {
-    return firestore
-        .collection('chat')
-        .document(widget.currentUserId)
-        .collection(widget.currentUserName)
-        .document(widget.toUserId)
-        .collection(widget.toUserName)
-        .orderBy('timestamp', descending: true)
-        .snapshots();
-  }
-
-  Future<void> createChat() async {
-    await firestore
-        .collection('chat')
-        .document(widget.currentUserId)
-        .collection(widget.currentUserName)
-        .document(widget.toUserId)
-        .collection(widget.toUserName)
-        .add({
-      'message': message,
-      'author': true,
-      'timestamp': Timestamp.now(),
-      'authorName': widget.currentUserName,
-      'replyTo': replyToAuthor,
-      'replyFor': replyToMessage,
-    });
-    await firestore
-        .collection('chat')
-        .document(widget.toUserId)
-        .collection(widget.toUserName)
-        .document(widget.currentUserId)
-        .collection(widget.currentUserName)
-        .add({
-      'message': message,
-      'author': false,
-      'timestamp': Timestamp.now(),
-      'authorName': widget.currentUserName,
-      'replyTo': replyToAuthor,
-      'replyFor': replyToMessage,
-    });
-
-    await firestore
-        .collection('chatlist')
-        .document(widget.currentUserId)
-        .collection(widget.currentUserName)
-        .document(widget.toUserId)
-        .setData({
-      'name': widget.toUserName,
-      'timestamp': Timestamp.now(),
-      'lastmessage': message,
-    });
-    await firestore
-        .collection('chatlist')
-        .document(widget.toUserId)
-        .collection(widget.toUserName)
-        .document(widget.currentUserId)
-        .setData({
-      'name': widget.currentUserName,
-      'timestamp': Timestamp.now(),
-      'lastmessage': message,
-    });
-  }
+  ChatService chatService = ChatService();
 
   @override
   void initState() {
     super.initState();
-
-    getChatMessage().then((onValue) {
-      setState(() {
-        allMessages = onValue;
-      });
-    });
 
     slideController = AnimationController(
       vsync: this,
@@ -220,7 +157,6 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
     double prevPosotion = dragPosition;
     dragPosition = 0.0;
     replySlideController.fling(velocity: -1.1);
-    print('po is ${context.size.width / 8}');
     if (prevPosotion > context.size.width / 8) {
       setState(() {
         replyToAuthor = author;
@@ -234,7 +170,8 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final color = Provider.of<ColorState>(context);
+    final color = Provider.of<ColorService>(context);
+    User user = Provider.of<UserService>(context).user;
 
     return Scaffold(
       backgroundColor: color.primaryColor,
@@ -243,8 +180,12 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
         backgroundColor: color.primaryColor,
       ),
       body: StreamBuilder<QuerySnapshot>(
-          stream: allMessages,
+          stream: chatService.getChatMessages(widget.chatId),
           builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              chatLength = snapshot.data.documents.length;
+              print(chatLength);
+            }
             return !snapshot.hasData
                 ? Center(
                     child: CircularProgressIndicator(
@@ -258,24 +199,24 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
                         child: ListView.builder(
                           reverse: true,
                           scrollDirection: Axis.vertical,
-                          itemCount: snapshot.data.documents.length,
+                          itemCount: chatLength,
                           itemBuilder: (context, index) {
-                            bool author =
-                                snapshot.data.documents[index].data['author'];
+                            Chat chat = Chat.fromFirestore(
+                                snapshot.data.documents[index]);
+
+                            bool author = chat.fromUserId == user.uid;
+                            //     snapshot.data.documents[index].data['author'];
                             bool isPreviousByAuthor =
                                 index == snapshot.data.documents.length - 1
                                     ? false
-                                    : snapshot.data.documents[index]
-                                            .data['authorName'] ==
+                                    : chat.fromUserId ==
                                         snapshot.data.documents[index + 1]
-                                            .data['authorName'];
-                            String replyTo =
-                                snapshot.data.documents[index].data['replyTo'];
-                            String replyFor =
-                                snapshot.data.documents[index].data['replyFor'];
+                                            .data['fromUserId'];
 
-                            String authorName = snapshot
-                                .data.documents[index].data['authorName'];
+                            String replyTo = chat.replyTo;
+                            String replyFor = chat.replyFor;
+                            String authorName = chat.fromUserName;
+
                             return Padding(
                               padding: EdgeInsets.fromLTRB(
                                   author ? 40 : 5, 2, !author ? 40 : 5, 2),
@@ -293,8 +234,7 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
                                     _handleDragEnd(
                                         details,
                                         author ? 'You' : authorName,
-                                        snapshot.data.documents[index]
-                                            .data['message']);
+                                        chat.message);
                                   }
                                 },
                                 child: SlideTransition(
@@ -319,13 +259,12 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
                                               ? Container(
                                                   // width: double.infinity,
                                                   decoration: BoxDecoration(
-                                                      color: Color(0x22909090),
+                                                      // color: Color(0x22909090),
                                                       border: Border(
                                                           left: BorderSide(
-                                                        width: 5,
-                                                        color:
-                                                            color.primaryColor,
-                                                      ))),
+                                                    width: 5,
+                                                    color: color.primaryColor,
+                                                  ))),
                                                   padding: EdgeInsets.symmetric(
                                                       horizontal: 10,
                                                       vertical: 6),
@@ -359,8 +298,7 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
                                             children: [
                                               Flexible(
                                                 child: Text(
-                                                  snapshot.data.documents[index]
-                                                      .data['message'],
+                                                  chat.message,
                                                   style:
                                                       TextStyle(fontSize: 25),
                                                 ),
@@ -618,7 +556,23 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
                                       setState(() {
                                         isReplying = false;
                                       });
-                                      await createChat();
+
+                                      print('from  ${user.uid}');
+                                      print('to  ${widget.toUserId}');
+
+                                      chatService.createChat(
+                                        Chat(
+                                          message: message,
+                                          replyFor: replyToMessage,
+                                          replyTo: replyToAuthor,
+                                          toUserId: widget.toUserId,
+                                          fromUserId: user.uid,
+                                          toUserName: widget.toUserName,
+                                          fromUserName: user.name,
+                                          type: 'text',
+                                        ),
+                                        chatLength,
+                                      );
                                       setState(() {
                                         message = '';
                                         replyToMessage = null;
