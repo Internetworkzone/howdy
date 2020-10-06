@@ -9,7 +9,6 @@ class AuthRepository {
   }
 
   Future<AuthResult> signIn(String email, String password) async {
-    print('from repo  $email $password');
     return await auth.signInWithEmailAndPassword(
         email: email, password: password);
   }

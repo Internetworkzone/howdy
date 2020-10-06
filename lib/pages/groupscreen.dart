@@ -123,8 +123,6 @@ class _GroupScreenState extends State<GroupScreen> {
       isJoined = groupDoc.exists;
     });
 
-    print(isJoined);
-
     return groupDoc.exists;
   }
 

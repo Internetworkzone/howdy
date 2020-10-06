@@ -1,5 +1,8 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:howdy/modals/constants.dart';
 import 'package:howdy/modals/user.dart';
 import 'package:howdy/pages/chatscreen.dart';
 import 'package:howdy/pages/groupscreen.dart';
@@ -32,42 +35,36 @@ class _HomePageState extends State<HomePage>
         backgroundColor: color.primaryColor,
         title: Text(
           'Howdy',
-          style: TextStyle(color: color.secondaryColor),
         ),
         actions: <Widget>[
           AppbarIcon(
             icon: FontAwesomeIcons.search,
-            color: color.secondaryColor,
             onpressed: () {
               setState(() {
                 appbarState = 2;
               });
             },
           ),
-          AppbarIcon(
-            icon: FontAwesomeIcons.solidLightbulb,
-            color: color.bulbColor,
-            onpressed: () => color.setColorMode(),
-          ),
-          AppbarIcon(
-            icon: FontAwesomeIcons.solidBell,
-            color: color.secondaryColor,
-            onpressed: () {},
-          ),
-          AppbarIcon(
-            icon: FontAwesomeIcons.userAlt,
-            color: color.secondaryColor,
-            onpressed: () => gotoProfile(),
+          PopupMenuButton(
+            icon: Icon(Icons.more_vert, size: 30),
+            onSelected: (value) {
+              if (value == 'theme') {
+                showColorPallete(color);
+              }
+            },
+            itemBuilder: (_) {
+              return showMore();
+            },
           ),
         ],
         bottom: TabBar(
           controller: tabController,
           tabs: mytab,
-          labelStyle: TextStyle(fontSize: 22),
-          indicatorSize: TabBarIndicatorSize.label,
-          indicatorColor: color.secondaryColor,
-          unselectedLabelColor: color.secondaryColor,
-          labelColor: color.secondaryColor,
+          labelStyle: TextStyle(fontSize: 17),
+          indicatorSize: TabBarIndicatorSize.tab,
+          indicatorWeight: 3.5,
+          indicatorColor: white,
+          unselectedLabelColor: Color(0x88ffffff),
         ),
         elevation: 20,
       );
@@ -76,7 +73,6 @@ class _HomePageState extends State<HomePage>
         backgroundColor: color.primaryColor,
         leading: AppbarIcon(
           icon: FontAwesomeIcons.arrowLeft,
-          color: color.secondaryColor,
           onpressed: () {
             setState(() {
               appbarState = 1;
@@ -91,7 +87,7 @@ class _HomePageState extends State<HomePage>
             focusedBorder: InputBorder.none,
             hintText: 'Search',
             hintStyle: TextStyle(
-              color: color.secondaryColor,
+              color: white,
             ),
           ),
         ),
@@ -101,29 +97,27 @@ class _HomePageState extends State<HomePage>
   }
 
   List<Tab> mytab = [
-    Tab(text: 'People'),
-    Tab(text: 'Chats'),
-    Tab(text: 'Groups'),
+    Tab(text: 'CHATS'),
+    Tab(text: 'STATUS'),
+    Tab(text: 'CALLS'),
   ];
 
-  void gotoProfile() {
-    User user = Provider.of<UserService>(context, listen: false).user;
-
-    if (user.uid == null) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => LoginPage(),
-        ),
-      );
-    } else {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => ProfilePage(),
-        ),
-      );
-    }
+  showMore() {
+    return [
+      PopupMenuItem(
+          textStyle: TextStyle(
+            fontSize: 18,
+            color: black,
+          ),
+          child: Text('New group')),
+      PopupMenuItem(child: Text('New broadcast')),
+      PopupMenuItem(child: Text('WhatsApp Web')),
+      PopupMenuItem(child: Text('Starred messages')),
+      PopupMenuItem(child: Text('Payments')),
+      PopupMenuItem(child: Text('Settings')),
+      PopupMenuItem(child: Text('Dark mode')),
+      PopupMenuItem(value: 'theme', child: Text('Themes')),
+    ];
   }
 
   @override
@@ -139,14 +133,9 @@ class _HomePageState extends State<HomePage>
       barrierColor: Colors.transparent,
       context: context,
       builder: (_) => ColorPallete(
-        ontap1: () => color.setColor(ColorId().purple),
-        ontap2: () => color.setColor(ColorId().lightOrange),
-        ontap3: () => color.setColor(ColorId().pink),
-        ontap4: () => color.setColor(ColorId().blue),
-        ontap5: () => color.setColor(ColorId().green),
-        ontap6: () => color.setColor(ColorId().greyBlue),
-        ontap7: () => color.setColor(ColorId().seaBlue),
-        palletteColor: color.bulbColor,
+        ontap: (id) {
+          color.setColor(id);
+        },
       ),
     );
   }
@@ -155,9 +144,7 @@ class _HomePageState extends State<HomePage>
     UserService userService = UserService();
     SharedPreferences preferences = await SharedPreferences.getInstance();
     String uid = preferences.getString('uid');
-    bool dark = preferences.getBool('isDarkMode');
     int color = preferences.getInt('color');
-    Provider.of<ColorService>(context, listen: false).darkMode = dark ?? false;
     Provider.of<ColorService>(context, listen: false).setColor(color ?? 1);
     Provider.of<UserService>(context, listen: false).user =
         await userService.updateUser(uid);
@@ -168,26 +155,33 @@ class _HomePageState extends State<HomePage>
     final color = Provider.of<ColorService>(context);
 
     return Scaffold(
-      backgroundColor: color.primaryColor,
+      backgroundColor: white,
       appBar: setAppbar(),
       body: Stack(
         children: <Widget>[
           TabBarView(
             controller: tabController,
             children: <Widget>[
-              PeopleScreen(),
               ChatScreen(),
+              PeopleScreen(),
               GroupScreen(),
             ],
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: color.bulbColor,
-        onPressed: () => showColorPallete(color),
+        backgroundColor: color.secondaryColor,
+        onPressed: () {
+          Navigator.push(
+              context, MaterialPageRoute(builder: (_) => PeopleScreen()));
+        },
         child: Icon(
-          FontAwesomeIcons.palette,
-          color: color.primaryColor,
+          tabController.index == 0
+              ? Icons.message
+              : tabController.index == 1
+                  ? Icons.camera_alt
+                  : Icons.call,
+          color: white,
         ),
       ),
     );

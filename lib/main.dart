@@ -11,20 +11,22 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SharedPreferences preferences = await SharedPreferences.getInstance();
-  bool isDarkMode = preferences.getBool('isDarkMode');
-  if (isDarkMode != null && isDarkMode) ColorService().setColorMode();
   int color = preferences.getInt('color');
 
-  runApp(MyApp(
-    color: color,
-    darkMode: isDarkMode,
-  ));
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  MyApp({this.color, this.darkMode});
-  final int color;
-  final bool darkMode;
+  isLoggedIn() {
+    String uid;
+    Future<SharedPreferences> preferences = SharedPreferences.getInstance();
+    preferences.then((value) {
+      uid = value.getString('uid');
+    });
+
+    return uid != null;
+  }
+
   Widget getUserState() {
     return StreamBuilder<FirebaseUser>(
       stream: FirebaseAuth.instance.onAuthStateChanged,
@@ -34,7 +36,7 @@ class MyApp extends StatelessWidget {
         } else if (snapshot.data != null) {
           return LoginPage();
         } else {
-          return Material(child: CircularProgressIndicator());
+          return isLoggedIn() ? HomePage() : LoginPage();
         }
       },
     );

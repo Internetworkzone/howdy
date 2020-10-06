@@ -12,58 +12,100 @@ class ColorId {
   int seaBlue = 7;
 }
 
-class ColorService extends ChangeNotifier {
-  Color primaryColor = purple;
-  Color lightprimaryColor = purple;
-  Color secondaryColor = white;
-  Color bulbColor = black;
-  bool darkMode = false;
+class PrimaryColor {
+  static final Color teal = Colors.teal[800];
+  static final Color red = Colors.red[800];
+  static final Color purple = Colors.purple[800];
+  static final Color orange = Colors.orange[800];
+  static final Color grey = Colors.grey[800];
+  static final Color yellow = Colors.yellow[800];
+  static final Color pink = Colors.pink[800];
 
-  setColorMode() async {
-    SharedPreferences preferences = await SharedPreferences.getInstance();
-
-    darkMode = !darkMode;
-    primaryColor = darkMode ? black : lightprimaryColor;
-    secondaryColor = darkMode ? lightprimaryColor : white;
-    bulbColor = darkMode ? white : black;
-    notifyListeners();
-    preferences.setBool('isDarkMode', darkMode);
-    print('called set darkmode');
-    print('color is $primaryColor');
+  Color getPrimaryColor() {
+    int color;
+    Future<SharedPreferences> prefs = SharedPreferences.getInstance();
+    prefs.then((value) {
+      color = value.getInt('color');
+    });
+    return ColorService().setColor(color);
   }
+}
 
-  setColor(int colorId) async {
-    SharedPreferences preferences = await SharedPreferences.getInstance();
+class SecondaryColor {
+  static final Color teal = Colors.tealAccent[400];
+  static final Color red = Colors.redAccent[400];
+  static final Color purple = Colors.purpleAccent[400];
+  static final Color orange = Colors.orangeAccent[400];
+  static final Color grey = Colors.black;
+  static final Color yellow = Colors.yellowAccent[400];
+  static final Color pink = Colors.pinkAccent[400];
+}
+
+class BubbleColor {
+  static final Color teal = Color(0xffe1ffc7);
+  static final Color red = Colors.red[100];
+  static final Color purple = Colors.purple[100];
+  static final Color orange = Colors.orange[100];
+  static final Color grey = Colors.grey[100];
+  static final Color yellow = Colors.yellow[100];
+  static final Color pink = Colors.pink[100];
+}
+
+class ColorService extends ChangeNotifier {
+  Color primaryColor = PrimaryColor.teal;
+  Color secondaryColor = white;
+  Color bubbleColor = white;
+
+  Color setColor(int colorId) {
+    Future<SharedPreferences> preferences = SharedPreferences.getInstance();
 
     switch (colorId) {
       case 1:
-        lightprimaryColor = purple;
+        primaryColor = PrimaryColor.red;
+        secondaryColor = SecondaryColor.red;
+        bubbleColor = BubbleColor.red;
+
         break;
       case 2:
-        lightprimaryColor = lightOrange;
+        primaryColor = PrimaryColor.orange;
+        secondaryColor = SecondaryColor.orange;
+        bubbleColor = BubbleColor.orange;
+
         break;
       case 3:
-        lightprimaryColor = pink;
+        primaryColor = PrimaryColor.grey;
+        secondaryColor = SecondaryColor.grey;
+        bubbleColor = BubbleColor.grey;
+
         break;
       case 4:
-        lightprimaryColor = blue;
+        primaryColor = PrimaryColor.teal;
+        secondaryColor = SecondaryColor.teal;
+        bubbleColor = BubbleColor.teal;
+
         break;
       case 5:
-        lightprimaryColor = green;
+        primaryColor = PrimaryColor.pink;
+        secondaryColor = SecondaryColor.pink;
+        bubbleColor = BubbleColor.pink;
+
         break;
       case 6:
-        lightprimaryColor = greyBlue;
+        primaryColor = PrimaryColor.yellow;
+        secondaryColor = SecondaryColor.yellow;
+        bubbleColor = BubbleColor.yellow;
+
         break;
       case 7:
-        lightprimaryColor = seaBlue;
+        primaryColor = PrimaryColor.purple;
+        secondaryColor = SecondaryColor.purple;
+        bubbleColor = BubbleColor.purple;
+
         break;
     }
 
-    primaryColor = darkMode ? black : lightprimaryColor;
-    secondaryColor = darkMode ? lightprimaryColor : white;
-    bulbColor = darkMode ? white : black;
-
-    preferences.setInt('color', colorId);
+    preferences.then((value) => value.setInt('color', colorId));
     notifyListeners();
+    return primaryColor;
   }
 }

@@ -27,7 +27,7 @@ class ChatRepository {
     }
   }
 
-  Stream<QuerySnapshot> getChatList() {
+  Stream<QuerySnapshot> getChatList(uid) {
     return _firestore.collection('allChats').snapshots();
   }
 

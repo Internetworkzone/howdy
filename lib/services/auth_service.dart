@@ -16,9 +16,7 @@ class AuthService {
 
   Future<void> signInUser(String email, String password) async {
     SharedPreferences preferences = await SharedPreferences.getInstance();
-    print('from service $email $password');
     AuthResult result = await authRepository.signIn(email, password);
-    print('from service $email $password');
 
     preferences.setString('uid', result.user.uid);
 

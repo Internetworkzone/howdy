@@ -1,26 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:howdy/modals/constants.dart';
+import 'package:howdy/services/color_service.dart';
 
 class ColorPallete extends StatelessWidget {
   const ColorPallete({
-    this.ontap1,
-    this.ontap2,
-    this.ontap3,
-    this.ontap4,
-    this.ontap5,
-    this.ontap6,
-    this.ontap7,
+    this.ontap,
+
     // this.showColorPallette,
-    this.palletteColor,
+    this.palletteColor = black,
   });
 
-  final ontap1;
-  final ontap2;
-  final ontap3;
-  final ontap4;
-  final ontap5;
-  final ontap6;
-  final ontap7;
+  final Function(int color) ontap;
+
   final Color palletteColor;
 
   @override
@@ -51,12 +42,12 @@ class ColorPallete extends StatelessWidget {
                     children: <Widget>[
                       SizedBox.shrink(),
                       ColorCircle(
-                        color: purple,
-                        ontap: ontap1,
+                        color: PrimaryColor.red,
+                        ontap: () => ontap(1),
                       ),
                       ColorCircle(
-                        color: lightOrange,
-                        ontap: ontap2,
+                        color: PrimaryColor.orange,
+                        ontap: () => ontap(2),
                       ),
                       SizedBox.shrink()
                     ],
@@ -68,16 +59,16 @@ class ColorPallete extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: <Widget>[
                       ColorCircle(
-                        color: pink,
-                        ontap: ontap3,
+                        color: PrimaryColor.grey,
+                        ontap: () => ontap(3),
                       ),
                       ColorCircle(
-                        color: blue,
-                        ontap: ontap4,
+                        color: PrimaryColor.teal,
+                        ontap: () => ontap(4),
                       ),
                       ColorCircle(
-                        color: green,
-                        ontap: ontap5,
+                        color: PrimaryColor.pink,
+                        ontap: () => ontap(5),
                       ),
                     ],
                   ),
@@ -89,12 +80,12 @@ class ColorPallete extends StatelessWidget {
                     children: <Widget>[
                       SizedBox.shrink(),
                       ColorCircle(
-                        color: greyBlue,
-                        ontap: ontap6,
+                        color: PrimaryColor.yellow,
+                        ontap: () => ontap(6),
                       ),
                       ColorCircle(
-                        color: seaBlue,
-                        ontap: ontap7,
+                        color: PrimaryColor.purple,
+                        ontap: () => ontap(7),
                       ),
                       SizedBox.shrink()
                     ],

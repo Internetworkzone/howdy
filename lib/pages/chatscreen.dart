@@ -20,7 +20,7 @@ class _ChatScreenState extends State<ChatScreen> {
   ChatService chatService = ChatService();
 
   goToChat({name, id, userId}) {
-    User user = Provider.of<UserService>(context).user;
+    User user = Provider.of<UserService>(context, listen: false).user;
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -35,6 +35,11 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
+  delay() async {
+    await Future.delayed(Duration(seconds: 5));
+    setState(() {});
+  }
+
   @override
   void initState() {
     super.initState();
@@ -45,24 +50,30 @@ class _ChatScreenState extends State<ChatScreen> {
     final color = Provider.of<ColorService>(context, listen: false);
     User user = Provider.of<UserService>(context).user;
 
-    if (user.uid == null) {
+    if (user == null) {
+      delay();
       return Center(
-          child: Text('Log in to see your chat',
-              style: TextStyle(color: color.secondaryColor, fontSize: 20)));
+        child: CircularProgressIndicator(),
+      );
     } else {
       return StreamBuilder(
-        stream: chatService.getChatList(),
+        stream: chatService.getChatList(user.uid),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return Center(
               child: CircularProgressIndicator(backgroundColor: purple),
             );
           }
-          return ListView.builder(
+          return ListView.separated(
+            padding: EdgeInsets.only(top: 10),
             itemCount: snapshot.data.documents.length,
+            separatorBuilder: (_, ind) => Divider(
+              thickness: 1,
+              indent: MediaQuery.of(context).size.width / 4.3,
+            ),
             itemBuilder: (context, index) {
-              String name;
-              String userId;
+              String name = '';
+              String userId = '';
               String id = snapshot.data.documents[index].documentID;
               List<dynamic> membersName =
                   snapshot.data.documents[index].data['membersName'];
@@ -70,39 +81,76 @@ class _ChatScreenState extends State<ChatScreen> {
                   snapshot.data.documents[index].data['membersId'];
 
               if (membersName[0] == user.name) {
-                name = membersName[1];
+                name = membersName[1] ?? '';
                 userId = membersId[1];
               } else {
-                name = membersName[0];
+                name = membersName[0] ?? '';
                 userId = membersId[0];
               }
               String message =
                   snapshot.data.documents[index].data['lastMessage'];
 
               return Card(
-                color: color.primaryColor,
-                child: ListTile(
-                  title: Text(
-                    name,
-                    style: TextStyle(
-                      color: color.secondaryColor,
-                      fontSize: 30,
-                    ),
-                  ),
-                  subtitle: Text(
-                    message,
-                    style: TextStyle(
-                      color: color.secondaryColor,
-                      fontSize: 18,
-                    ),
-                  ),
-                  onTap: () => goToChat(
-                    name: name,
-                    id: id,
-                    userId: userId,
-                  ),
-                ),
                 elevation: 0,
+                child: Row(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(left: 8.0),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.person_rounded,
+                          color: white,
+                          size: 65,
+                        ),
+                      ),
+                    ),
+                    Flexible(
+                      child: ListTile(
+                        tileColor: white,
+                        title: Text(
+                          name,
+                          style: TextStyle(
+                            color: black,
+                            fontSize: 30,
+                          ),
+                        ),
+                        subtitle: Text(
+                          message,
+                          style: TextStyle(
+                            color: black,
+                            fontSize: 18,
+                          ),
+                        ),
+                        trailing: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Yesterday'),
+                            Container(
+                              padding: EdgeInsets.all(5),
+                              decoration: BoxDecoration(
+                                color: color.secondaryColor,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Text(
+                                '17',
+                                style: TextStyle(color: white),
+                              ),
+                            )
+                          ],
+                        ),
+                        onTap: () => goToChat(
+                          name: name,
+                          id: id,
+                          userId: userId,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               );
             },
           );

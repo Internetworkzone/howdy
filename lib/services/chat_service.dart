@@ -10,8 +10,6 @@ class ChatService {
   ChatDetails chatDetails;
 
   Future<void> createChat(Chat chat, int length) async {
-    print('from ${chat.fromUserId}');
-    print('to ${chat.toUserId}');
     String chatId = chat.fromUserId.hashCode > chat.toUserId.hashCode
         ? '${chat.fromUserId}_${chat.toUserId}'
         : '${chat.toUserId}_${chat.fromUserId}';
@@ -46,11 +44,15 @@ class ChatService {
     chatRepository.sendMessage(chatId, chatMessage);
   }
 
-  Stream<QuerySnapshot> getChatList() {
-    return chatRepository.getChatList();
+  Stream<QuerySnapshot> getChatList(uid) {
+    return chatRepository.getChatList(uid);
   }
 
-  Stream<QuerySnapshot> getChatMessages(chatId) {
+  Stream<QuerySnapshot> getChatMessages(fromUserId, toUserId) {
+    String chatId = fromUserId.hashCode > toUserId.hashCode
+        ? '${fromUserId}_$toUserId'
+        : '${toUserId}_$fromUserId';
+
     return chatRepository.getChatStream(chatId);
   }
 }
