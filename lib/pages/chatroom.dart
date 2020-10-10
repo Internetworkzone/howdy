@@ -1,27 +1,26 @@
+import 'dart:math';
 import 'package:bubble/bubble.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:howdy/modals/call.dart';
 import 'package:howdy/modals/chat.dart';
 import 'package:howdy/modals/constants.dart';
 import 'package:howdy/modals/user.dart';
+import 'package:howdy/pages/call_screen.dart';
+import 'package:howdy/services/call_service.dart';
 import 'package:howdy/services/chat_service.dart';
 import 'package:howdy/services/color_service.dart';
 import 'package:howdy/services/user_service.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
 class ChatRoom extends StatefulWidget {
   ChatRoom({
-    @required this.toUserName,
-    @required this.toUserId,
-    @required this.currentUserName,
-    @required this.currentUserId,
+    this.peerUser,
     this.chatId,
   });
-  final String toUserName;
-  final String toUserId;
-  final String currentUserName;
-  final String currentUserId;
+  final User peerUser;
   final String chatId;
 
   @override
@@ -184,6 +183,27 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
     }
   }
 
+  Future<void> startCalling(User user, String type) async {
+    await PermissionHandler().requestPermissions(
+      [PermissionGroup.camera, PermissionGroup.microphone],
+    );
+
+    Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (_) => CallScreen(
+                  call: Call(
+                    callerName: user.name,
+                    callerUid: user.uid,
+                    receiverName: widget.peerUser.name,
+                    receiverUid: widget.peerUser.uid,
+                    calltype: type,
+                    channelName: Random().nextInt(100000).toString(),
+                  ),
+                  isCaller: true,
+                )));
+  }
+
   @override
   Widget build(BuildContext context) {
     final color = Provider.of<ColorService>(context);
@@ -205,17 +225,23 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
               ),
             ),
             SizedBox(width: 10),
-            Text(widget.toUserName),
+            Text(widget.peerUser.name),
           ],
         ),
         actions: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10.0),
-            child: Icon(Icons.videocam, size: 30),
+            child: GestureDetector(
+              child: Icon(Icons.videocam, size: 30),
+              onTap: () => startCalling(user, CallType.video),
+            ),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10),
-            child: Icon(Icons.call, size: 30),
+            child: GestureDetector(
+              child: Icon(Icons.call, size: 30),
+              onTap: () => startCalling(user, CallType.voice),
+            ),
           ),
           PopupMenuButton(
             icon: Icon(Icons.more_vert, size: 30),
@@ -227,8 +253,7 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
         ],
       ),
       body: StreamBuilder<QuerySnapshot>(
-          stream: chatService.getChatMessages(
-              widget.currentUserId, widget.toUserId),
+          stream: chatService.getChatMessages(user.uid, widget.peerUser.uid),
           builder: (context, snapshot) {
             if (snapshot.hasData) {
               chatLength = snapshot.data.documents.length;
@@ -638,9 +663,9 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
                                               message: message,
                                               replyFor: replyToMessage,
                                               replyTo: replyToAuthor,
-                                              toUserId: widget.toUserId,
+                                              toUserId: widget.peerUser.uid,
                                               fromUserId: user.uid,
-                                              toUserName: widget.toUserName,
+                                              toUserName: widget.peerUser.name,
                                               fromUserName: user.name,
                                               type: 'text',
                                             ),

@@ -83,7 +83,7 @@ class ChatDetails {
     return ChatDetails(
       lastMessage: data['lastMessage'],
       lastMessageTimestamp: data['lastMessageTimestamp'],
-      membersId: data['members'],
+      membersId: data['membersId'],
       membersName: data['membersName'],
       unseenCounts: data['unseenCounts'],
       isTyping: data['isTyping'],

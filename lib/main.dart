@@ -10,8 +10,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  SharedPreferences preferences = await SharedPreferences.getInstance();
-  int color = preferences.getInt('color');
 
   runApp(MyApp());
 }
@@ -26,6 +24,8 @@ class MyApp extends StatelessWidget {
 
     return uid != null;
   }
+
+  getUserDetails() {}
 
   Widget getUserState() {
     return StreamBuilder<FirebaseUser>(

@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:howdy/modals/constants.dart';
 import 'package:howdy/modals/user.dart';
 import 'package:howdy/pages/chatroom.dart';
-import 'package:howdy/pages/loginpage.dart';
 import 'package:howdy/services/color_service.dart';
 import 'package:howdy/services/user_service.dart';
 import 'package:provider/provider.dart';
@@ -23,29 +22,16 @@ class _PeopleScreenState extends State<PeopleScreen> {
     super.initState();
   }
 
-  gotoChatRoom({userName, userId, docId}) {
-    User user = Provider.of<UserService>(context, listen: false).user;
-    if (user.uid != null) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => ChatRoom(
-            toUserName: userName,
-            toUserId: userId,
-            currentUserName: currentUserName,
-            currentUserId: user.uid,
-            chatId: docId,
-          ),
+  gotoChatRoom({User peer, String docId}) {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ChatRoom(
+          peerUser: peer,
+          chatId: docId,
         ),
-      );
-    } else {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => LoginPage(),
-        ),
-      );
-    }
+      ),
+    );
   }
 
   @override
@@ -91,11 +77,10 @@ class _PeopleScreenState extends State<PeopleScreen> {
                     // physics: NeverScrollableScrollPhysics(),
                     itemCount: snapshot.data.documents.length,
                     itemBuilder: (context, index) {
-                      String userName =
-                          snapshot.data.documents[index].data['name'];
-                      String userEmail =
-                          snapshot.data.documents[index].data['email'];
-                      String userId = snapshot.data.documents[index].data['id'];
+                      User peerUser =
+                          User.fromFirestore(snapshot.data.documents[index]);
+                      String userName = peerUser.name;
+                      String userEmail = peerUser.email;
                       String docId = snapshot.data.documents[index].documentID;
 
                       return user.uid == docId
@@ -106,8 +91,7 @@ class _PeopleScreenState extends State<PeopleScreen> {
                               circleColor: Colors.grey[300],
                               onTap: () {
                                 gotoChatRoom(
-                                  userName: userName,
-                                  userId: userId,
+                                  peer: peerUser,
                                   docId: docId,
                                 );
                               },

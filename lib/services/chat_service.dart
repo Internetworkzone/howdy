@@ -44,7 +44,7 @@ class ChatService {
     chatRepository.sendMessage(chatId, chatMessage);
   }
 
-  Stream<QuerySnapshot> getChatList(uid) {
+  Stream<QuerySnapshot> getChatList(String uid) {
     return chatRepository.getChatList(uid);
   }
 

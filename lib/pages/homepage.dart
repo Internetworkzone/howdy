@@ -1,14 +1,14 @@
-import 'dart:math';
-
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:howdy/modals/call.dart';
 import 'package:howdy/modals/constants.dart';
 import 'package:howdy/modals/user.dart';
+import 'package:howdy/pages/call_screen.dart';
 import 'package:howdy/pages/chatscreen.dart';
 import 'package:howdy/pages/groupscreen.dart';
-import 'package:howdy/pages/loginpage.dart';
 import 'package:howdy/pages/people.dart';
-import 'package:howdy/pages/profilepage.dart';
+import 'package:howdy/services/call_service.dart';
 import 'package:howdy/services/color_service.dart';
 import 'package:howdy/services/user_service.dart';
 import 'package:howdy/widget/appbaricon.dart';
@@ -25,7 +25,7 @@ class _HomePageState extends State<HomePage>
     with SingleTickerProviderStateMixin {
   int appbarState = 1;
   TabController tabController;
-  // bool showColorPalette = false;
+  CallService callService = CallService();
 
   AppBar setAppbar() {
     final color = Provider.of<ColorService>(context, listen: false);
@@ -150,40 +150,68 @@ class _HomePageState extends State<HomePage>
         await userService.updateUser(uid);
   }
 
+  delay() async {
+    await Future.delayed(Duration(seconds: 5));
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     final color = Provider.of<ColorService>(context);
-
-    return Scaffold(
-      backgroundColor: white,
-      appBar: setAppbar(),
-      body: Stack(
-        children: <Widget>[
-          TabBarView(
-            controller: tabController,
-            children: <Widget>[
-              ChatScreen(),
-              PeopleScreen(),
-              GroupScreen(),
-            ],
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: color.secondaryColor,
-        onPressed: () {
-          Navigator.push(
-              context, MaterialPageRoute(builder: (_) => PeopleScreen()));
-        },
-        child: Icon(
-          tabController.index == 0
-              ? Icons.message
-              : tabController.index == 1
-                  ? Icons.camera_alt
-                  : Icons.call,
-          color: white,
+    User user = Provider.of<UserService>(context, listen: false).user;
+    if (user == null) {
+      delay();
+      return Material(
+        child: Center(
+          child: CircularProgressIndicator(),
         ),
-      ),
+      );
+    }
+
+    return StreamBuilder<DocumentSnapshot>(
+      stream: callService.getIncomingCall(user.uid),
+      builder: (context, snapshot) {
+        Call call;
+        if (snapshot.hasData && snapshot.data.data != null) {
+          call = Call.fromFirestore(snapshot.data);
+        }
+        return snapshot.hasData && snapshot.data.data != null
+            ? CallScreen(
+                call: call,
+                isCaller: false,
+              )
+            : Scaffold(
+                backgroundColor: white,
+                appBar: setAppbar(),
+                body: Stack(
+                  children: <Widget>[
+                    TabBarView(
+                      controller: tabController,
+                      children: <Widget>[
+                        ChatScreen(),
+                        PeopleScreen(),
+                        GroupScreen(),
+                      ],
+                    ),
+                  ],
+                ),
+                floatingActionButton: FloatingActionButton(
+                  backgroundColor: color.secondaryColor,
+                  onPressed: () {
+                    Navigator.push(context,
+                        MaterialPageRoute(builder: (_) => PeopleScreen()));
+                  },
+                  child: Icon(
+                    tabController.index == 0
+                        ? Icons.message
+                        : tabController.index == 1
+                            ? Icons.camera_alt
+                            : Icons.call,
+                    color: white,
+                  ),
+                ),
+              );
+      },
     );
   }
 }
