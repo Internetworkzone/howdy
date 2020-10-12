@@ -198,6 +198,7 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
                     receiverName: widget.peerUser.name,
                     receiverUid: widget.peerUser.uid,
                     calltype: type,
+                    callStatus: CallStatus.dialled,
                     channelName: Random().nextInt(100000).toString(),
                   ),
                   isCaller: true,

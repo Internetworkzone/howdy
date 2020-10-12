@@ -1,23 +1,30 @@
 import 'dart:async';
 import 'package:agora_rtc_engine/rtc_engine.dart';
 import 'package:agora_rtc_engine/rtc_remote_view.dart' as RemoteView;
+import 'package:audioplayers/audio_cache.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:agora_rtc_engine/rtc_local_view.dart' as LocalView;
 import 'package:howdy/modals/call.dart';
 import 'package:howdy/modals/constants.dart';
+import 'package:howdy/modals/user.dart';
 import 'package:howdy/services/app_id.dart';
 import 'package:howdy/services/call_service.dart';
 import 'package:howdy/services/color_service.dart';
+import 'package:howdy/services/user_service.dart';
 import 'package:provider/provider.dart';
 
 class CallScreen extends StatefulWidget {
   CallScreen({
     this.isCaller = false,
     this.call,
+    this.audioPlayer,
   });
 
   final Call call;
   final bool isCaller;
+  final AudioPlayer audioPlayer;
   @override
   _CallScreenState createState() => _CallScreenState();
 }
@@ -87,6 +94,9 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
           await callService.makeCall(
             widget.call,
           );
+          if (widget.audioPlayer != null &&
+              widget.audioPlayer.state == AudioPlayerState.PLAYING)
+            widget.audioPlayer.stop();
         },
         userJoined: (uid, elapsed) {
           if (timer != null && timer.isActive) {
@@ -100,7 +110,10 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
         },
         leaveChannel: (stats) {
           remoteUserId = null;
-          callService.disConnectCall(widget.call);
+          if (widget.isCaller)
+            callService.disConnectCall(widget.call, isPicked);
+          if (widget.audioPlayer.state == AudioPlayerState.PLAYING)
+            widget.audioPlayer.stop();
         },
         userOffline: (uid, reason) async {
           remoteUserId = null;
@@ -128,8 +141,8 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
   }
 
   Future<void> endCall() async {
-    await engine.leaveChannel();
-    await engine.destroy();
+    engine.leaveChannel();
+    engine.destroy();
   }
 
   showIcons() {
@@ -154,7 +167,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    ColorService color = Provider.of<ColorService>(context);
+    ColorService color = Provider.of<ColorService>(context, listen: false);
     return Scaffold(
       backgroundColor: color.primaryColor,
       body: Stack(

@@ -9,6 +9,7 @@ class Call {
   final String channelName;
   final double duration;
   final Timestamp timestamp;
+  final String callStatus;
   Call({
     this.callerName,
     this.callerUid,
@@ -18,6 +19,7 @@ class Call {
     this.channelName,
     this.duration,
     this.timestamp,
+    this.callStatus,
   });
 
   factory Call.fromFirestore(DocumentSnapshot doc) {
@@ -31,6 +33,7 @@ class Call {
       calltype: data['calltype'],
       duration: data['duration'],
       timestamp: data['timestamp'],
+      callStatus: data['callStatus'],
     );
   }
   Map<String, dynamic> toMap() {
@@ -43,6 +46,7 @@ class Call {
       'calltype': this.calltype,
       'duration': this.duration,
       'timestamp': this.timestamp,
+      'callStatus': this.callStatus,
     };
   }
 }

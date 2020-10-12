@@ -8,44 +8,43 @@ class CallType {
   static String video = 'video';
 }
 
+class CallStatus {
+  static final missed = 'missed';
+  static final dialled = 'dialled';
+  static final received = 'received';
+}
+
 class CallService {
   CallRepository callRepository = CallRepository();
   Call call;
+  Timestamp timestamp;
 
   Stream<DocumentSnapshot> getIncomingCall(uid) {
     return callRepository.incomingCall(uid);
   }
 
   Future<void> makeCall(Call call) async {
-    // call = Call(
-    //   callerName: caller.name,
-    //   callerUid: caller.uid,
-    //   receiverName: receiver.name,
-    //   receiverUid: receiver.uid,
-    //   calltype: type,
-    //   timestamp: Timestamp.now(),
-    // );
-
-    await callRepository.connectCall(
-        call.callerUid, call.receiverUid, call.toMap());
+    timestamp = Timestamp.now();
+    Map<String, dynamic> data = call.toMap();
+    data['timestamp'] = timestamp;
+    await callRepository.connectCall(call.callerUid, call.receiverUid, data);
   }
 
-  Future<void> disConnectCall(Call call) async {
+  Future<void> disConnectCall(Call call, bool isPicked) async {
     await callRepository.deleteIncomingCall(call.callerUid);
     await callRepository.deleteIncomingCall(call.receiverUid);
+    addCallHistory(call, isPicked);
   }
 
-  Future<void> addCallHistory(
-      User caller, User receiver, elapsed, time, uid, type) async {
-    call = Call(
-      callerName: caller.name,
-      callerUid: caller.uid,
-      receiverName: receiver.name,
-      receiverUid: receiver.uid,
-      calltype: type,
-      duration: elapsed,
-      timestamp: time,
-    );
-    await callRepository.addToCallHistory(uid, call.toMap());
+  Future<void> addCallHistory(Call call, bool isPicked) async {
+    Map<String, dynamic> data = call.toMap();
+    data['timestamp'] = timestamp;
+    await callRepository.addToCallHistory(call.callerUid, data);
+    data['callStatus'] = isPicked ? CallStatus.received : CallStatus.missed;
+    await callRepository.addToCallHistory(call.receiverUid, data);
+  }
+
+  Future<QuerySnapshot> getHistory(String uid) async {
+    return await callRepository.getCallHistory(uid);
   }
 }

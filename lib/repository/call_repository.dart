@@ -51,7 +51,20 @@ class CallRepository {
         .delete();
   }
 
-  addToCallHistory(uid, Map data) {
-    firestore.collection('users').document(uid).collection('calls').add(data);
+  Future<void> addToCallHistory(uid, Map data) async {
+    await firestore
+        .collection('users')
+        .document(uid)
+        .collection('callHistory')
+        .add(data);
+  }
+
+  Future<QuerySnapshot> getCallHistory(String uid) async {
+    return await firestore
+        .collection('users')
+        .document(uid)
+        .collection('callHistory')
+        .orderBy('timestamp', descending: true)
+        .getDocuments();
   }
 }

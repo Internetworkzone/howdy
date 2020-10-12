@@ -31,6 +31,7 @@ class ChatRepository {
     return _firestore
         .collection('allChats')
         .where('membersId', arrayContains: uid)
+        // .orderBy('lastMessageTimestamp', descending: true)
         .snapshots();
   }
 

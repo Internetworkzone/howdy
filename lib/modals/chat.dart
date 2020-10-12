@@ -64,8 +64,8 @@ class Chat {
 class ChatDetails {
   final String lastMessage;
   final Timestamp lastMessageTimestamp;
-  final List<String> membersId;
-  final List<String> membersName;
+  final List<dynamic> membersId;
+  final List<dynamic> membersName;
   final Map<String, int> unseenCounts;
   final Map<String, bool> isTyping;
 
@@ -78,7 +78,7 @@ class ChatDetails {
     this.isTyping,
   });
 
-  factory ChatDetails.formFirestore(DocumentSnapshot doc) {
+  factory ChatDetails.fromFirestore(DocumentSnapshot doc) {
     var data = doc.data;
     return ChatDetails(
       lastMessage: data['lastMessage'],

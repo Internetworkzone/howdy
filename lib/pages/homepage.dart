@@ -1,9 +1,13 @@
+import 'package:audioplayers/audio_cache.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:howdy/modals/call.dart';
 import 'package:howdy/modals/constants.dart';
 import 'package:howdy/modals/user.dart';
+import 'package:howdy/pages/call_history_screen.dart';
 import 'package:howdy/pages/call_screen.dart';
 import 'package:howdy/pages/chatscreen.dart';
 import 'package:howdy/pages/groupscreen.dart';
@@ -26,6 +30,8 @@ class _HomePageState extends State<HomePage>
   int appbarState = 1;
   TabController tabController;
   CallService callService = CallService();
+  AudioCache cache;
+  AudioPlayer player = AudioPlayer();
 
   AppBar setAppbar() {
     final color = Provider.of<ColorService>(context, listen: false);
@@ -126,6 +132,9 @@ class _HomePageState extends State<HomePage>
     tabController =
         TabController(vsync: this, initialIndex: 0, length: mytab.length);
     getUserDetails();
+    cache = AudioCache(
+      fixedPlayer: player,
+    );
   }
 
   showColorPallete(ColorService color) {
@@ -174,11 +183,16 @@ class _HomePageState extends State<HomePage>
         Call call;
         if (snapshot.hasData && snapshot.data.data != null) {
           call = Call.fromFirestore(snapshot.data);
+          cache.loop('ring.mp3');
+        } else {
+          if (player != null && player.state == AudioPlayerState.PLAYING)
+            player.stop();
         }
         return snapshot.hasData && snapshot.data.data != null
             ? CallScreen(
                 call: call,
                 isCaller: false,
+                audioPlayer: player,
               )
             : Scaffold(
                 backgroundColor: white,
@@ -190,7 +204,7 @@ class _HomePageState extends State<HomePage>
                       children: <Widget>[
                         ChatScreen(),
                         PeopleScreen(),
-                        GroupScreen(),
+                        CallHistoryScreen(),
                       ],
                     ),
                   ],
@@ -198,8 +212,9 @@ class _HomePageState extends State<HomePage>
                 floatingActionButton: FloatingActionButton(
                   backgroundColor: color.secondaryColor,
                   onPressed: () {
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (_) => PeopleScreen()));
+                    // Navigator.push(context,
+                    //     MaterialPageRoute(builder: (_) => PeopleScreen()));
+                    SystemChannels.platform.invokeMethod('method');
                   },
                   child: Icon(
                     tabController.index == 0

@@ -32,6 +32,8 @@ dependencies:
   shared_preferences:
   agora_rtc_engine: ^3.1.2
   permission_handler: ^3.0.0
+  audioplayers: ^0.16.1
+  
 
 
     
@@ -63,6 +65,7 @@ flutter:
    - images/image7.png
    - images/image8.png
    - images/image9.png
+   - assets/ring.mp3
 
 
 
