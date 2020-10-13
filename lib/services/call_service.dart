@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:howdy/modals/call.dart';
-import 'package:howdy/modals/user.dart';
 import 'package:howdy/repository/call_repository.dart';
 
 class CallType {

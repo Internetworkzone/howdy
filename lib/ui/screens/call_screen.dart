@@ -1,18 +1,14 @@
 import 'dart:async';
 import 'package:agora_rtc_engine/rtc_engine.dart';
 import 'package:agora_rtc_engine/rtc_remote_view.dart' as RemoteView;
-import 'package:audioplayers/audio_cache.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:agora_rtc_engine/rtc_local_view.dart' as LocalView;
 import 'package:howdy/modals/call.dart';
-import 'package:howdy/modals/constants.dart';
-import 'package:howdy/modals/user.dart';
 import 'package:howdy/services/app_id.dart';
 import 'package:howdy/services/call_service.dart';
 import 'package:howdy/services/color_service.dart';
-import 'package:howdy/services/user_service.dart';
+import 'package:howdy/ui/themes/colors.dart';
 import 'package:provider/provider.dart';
 
 class CallScreen extends StatefulWidget {
@@ -201,7 +197,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
                         : widget.call.callerName,
                     style: TextStyle(
                       fontSize: 30,
-                      color: white,
+                      color: ConstantColor.white,
                     ),
                   ),
                   SizedBox(height: 10),
@@ -209,7 +205,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
                     widget.isCaller ? 'Ringing' : 'Calling',
                     style: TextStyle(
                       fontSize: 20,
-                      color: white,
+                      color: ConstantColor.white,
                     ),
                   ),
                 ],
@@ -226,7 +222,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
                     shape: CircleBorder(),
                     child: Icon(
                       Icons.call_end_sharp,
-                      color: white,
+                      color: ConstantColor.white,
                       size: 40,
                     ),
                     onPressed: () async {
@@ -244,7 +240,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
                           shape: CircleBorder(),
                           child: Icon(
                             Icons.call,
-                            color: white,
+                            color: ConstantColor.white,
                             size: 40,
                           ),
                           onPressed: () async {
@@ -283,7 +279,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
                         : widget.call.callerName,
                     style: TextStyle(
                       fontSize: 30,
-                      color: white,
+                      color: ConstantColor.white,
                     ),
                   ),
                   SizedBox(height: 10),
@@ -291,7 +287,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
                     'On call  03:36',
                     style: TextStyle(
                       fontSize: 20,
-                      color: white,
+                      color: ConstantColor.white,
                     ),
                   ),
                 ],
@@ -311,7 +307,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
                       shape: CircleBorder(),
                       child: Icon(
                         Icons.call_end_sharp,
-                        color: white,
+                        color: ConstantColor.white,
                         size: 40,
                       ),
                       onPressed: () async {
@@ -330,7 +326,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
                         GestureDetector(
                           child: Icon(
                             Icons.switch_camera,
-                            color: white,
+                            color: ConstantColor.white,
                             size: 30,
                           ),
                           onTap: () {
@@ -339,12 +335,12 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
                         ),
                         Icon(
                           Icons.videocam_off,
-                          color: white,
+                          color: ConstantColor.white,
                           size: 30,
                         ),
                         Icon(
                           Icons.mic_off,
-                          color: white,
+                          color: ConstantColor.white,
                           size: 30,
                         ),
                       ],

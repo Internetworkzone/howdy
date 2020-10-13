@@ -2,21 +2,21 @@ import 'package:audioplayers/audio_cache.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:howdy/modals/call.dart';
-import 'package:howdy/modals/constants.dart';
 import 'package:howdy/modals/user.dart';
-import 'package:howdy/pages/call_history_screen.dart';
-import 'package:howdy/pages/call_screen.dart';
-import 'package:howdy/pages/chatscreen.dart';
-import 'package:howdy/pages/groupscreen.dart';
-import 'package:howdy/pages/people.dart';
+import 'package:howdy/ui/screens/call_history_screen.dart';
+import 'package:howdy/ui/screens/call_screen.dart';
+import 'package:howdy/ui/screens/chatscreen.dart';
+import 'package:howdy/ui/screens/people.dart';
 import 'package:howdy/services/call_service.dart';
 import 'package:howdy/services/color_service.dart';
 import 'package:howdy/services/user_service.dart';
-import 'package:howdy/widget/appbaricon.dart';
-import 'package:howdy/widget/colorpallette.dart';
+import 'package:howdy/ui/screens/status_screen.dart';
+import 'package:howdy/ui/themes/colors.dart';
+import 'package:howdy/ui/themes/font_style.dart';
+import 'package:howdy/ui/widgets/appbaricon.dart';
+import 'package:howdy/ui/widgets/colorpallette.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -32,6 +32,7 @@ class _HomePageState extends State<HomePage>
   CallService callService = CallService();
   AudioCache cache;
   AudioPlayer player = AudioPlayer();
+  int index = 1;
 
   AppBar setAppbar() {
     final color = Provider.of<ColorService>(context, listen: false);
@@ -69,7 +70,7 @@ class _HomePageState extends State<HomePage>
           labelStyle: TextStyle(fontSize: 17),
           indicatorSize: TabBarIndicatorSize.tab,
           indicatorWeight: 3.5,
-          indicatorColor: white,
+          indicatorColor: ConstantColor.white,
           unselectedLabelColor: Color(0x88ffffff),
         ),
         elevation: 20,
@@ -93,7 +94,7 @@ class _HomePageState extends State<HomePage>
             focusedBorder: InputBorder.none,
             hintText: 'Search',
             hintStyle: TextStyle(
-              color: white,
+              color: ConstantColor.white,
             ),
           ),
         ),
@@ -103,6 +104,7 @@ class _HomePageState extends State<HomePage>
   }
 
   List<Tab> mytab = [
+    Tab(icon: Icon(Icons.camera_alt)),
     Tab(text: 'CHATS'),
     Tab(text: 'STATUS'),
     Tab(text: 'CALLS'),
@@ -113,7 +115,7 @@ class _HomePageState extends State<HomePage>
       PopupMenuItem(
           textStyle: TextStyle(
             fontSize: 18,
-            color: black,
+            color: ConstantColor.black,
           ),
           child: Text('New group')),
       PopupMenuItem(child: Text('New broadcast')),
@@ -130,11 +132,20 @@ class _HomePageState extends State<HomePage>
   void initState() {
     super.initState();
     tabController =
-        TabController(vsync: this, initialIndex: 0, length: mytab.length);
+        TabController(vsync: this, initialIndex: index, length: mytab.length);
+
+    tabController.addListener(updateIndex);
+
     getUserDetails();
     cache = AudioCache(
       fixedPlayer: player,
     );
+  }
+
+  updateIndex() {
+    setState(() {
+      index = tabController.index;
+    });
   }
 
   showColorPallete(ColorService color) {
@@ -154,7 +165,7 @@ class _HomePageState extends State<HomePage>
     SharedPreferences preferences = await SharedPreferences.getInstance();
     String uid = preferences.getString('uid');
     int color = preferences.getInt('color');
-    Provider.of<ColorService>(context, listen: false).setColor(color ?? 1);
+    Provider.of<ColorService>(context, listen: false).setColor(color ?? 4);
     Provider.of<UserService>(context, listen: false).user =
         await userService.updateUser(uid);
   }
@@ -195,38 +206,124 @@ class _HomePageState extends State<HomePage>
                 audioPlayer: player,
               )
             : Scaffold(
-                backgroundColor: white,
-                appBar: setAppbar(),
-                body: Stack(
-                  children: <Widget>[
-                    TabBarView(
-                      controller: tabController,
-                      children: <Widget>[
-                        ChatScreen(),
-                        PeopleScreen(),
-                        CallHistoryScreen(),
-                      ],
-                    ),
-                  ],
-                ),
-                floatingActionButton: FloatingActionButton(
-                  backgroundColor: color.secondaryColor,
-                  onPressed: () {
-                    // Navigator.push(context,
-                    //     MaterialPageRoute(builder: (_) => PeopleScreen()));
-                    SystemChannels.platform.invokeMethod('method');
+                backgroundColor: ConstantColor.white,
+                // appBar: setAppbar(),
+                body: NestedScrollView(
+                  // floatHeaderSlivers: true,
+                  headerSliverBuilder: (context, v) {
+                    return [
+                      SliverAppBar(
+                        backgroundColor: color.primaryColor,
+                        title: StyledText(
+                          'WhatsApp',
+                          size: 20,
+                          weight: FontWeight.w500,
+                        ),
+                        floating: true,
+                        pinned: true,
+                        snap: true,
+                        bottom: TabBar(
+                          controller: tabController,
+                          tabs: mytab,
+                          labelStyle: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                          ),
+                          labelPadding: EdgeInsets.all(0),
+                          indicatorPadding: EdgeInsets.all(0),
+                          indicatorSize: TabBarIndicatorSize.tab,
+                          indicatorWeight: 3.5,
+                          indicatorColor: ConstantColor.white,
+                          unselectedLabelColor: Color(0x88ffffff),
+                        ),
+                        actions: <Widget>[
+                          AppbarIcon(
+                            icon: Icons.search,
+                            size: 25,
+                            onpressed: () {
+                              setState(() {
+                                appbarState = 2;
+                              });
+                            },
+                          ),
+                          PopupMenuButton(
+                            padding: EdgeInsets.all(0),
+                            icon: Icon(Icons.more_vert, size: 25),
+                            onSelected: (value) {
+                              if (value == 'theme') {
+                                showColorPallete(color);
+                              }
+                            },
+                            itemBuilder: (_) {
+                              return showMore();
+                            },
+                          ),
+                        ],
+                      ),
+                    ];
                   },
-                  child: Icon(
-                    tabController.index == 0
-                        ? Icons.message
-                        : tabController.index == 1
-                            ? Icons.camera_alt
-                            : Icons.call,
-                    color: white,
+                  body: TabBarView(
+                    controller: tabController,
+                    children: <Widget>[
+                      Center(child: CircularProgressIndicator()),
+                      ChatScreen(),
+                      StatusScreen(),
+                      CallHistoryScreen(),
+                    ],
                   ),
                 ),
+
+                floatingActionButton: index == 2
+                    ? StatusFAB(
+                        color: color.secondaryColor,
+                      )
+                    : FloatingActionButton(
+                        backgroundColor: color.secondaryColor,
+                        onPressed: () {
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) => PeopleScreen(
+                                        isFromCall: index == 3,
+                                      )));
+                        },
+                        child: Icon(
+                          tabController.index == 1
+                              ? Icons.message
+                              : Icons.add_ic_call,
+                          color: ConstantColor.white,
+                        ),
+                      ),
               );
       },
+    );
+  }
+}
+
+class StatusFAB extends StatelessWidget {
+  StatusFAB({this.color});
+  final Color color;
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        FloatingActionButton(
+          mini: true,
+          child: Icon(
+            Icons.create,
+            color: ConstantColor.grey,
+          ),
+          backgroundColor: Colors.grey[200],
+          onPressed: () {},
+        ),
+        SizedBox(height: 16),
+        FloatingActionButton(
+          backgroundColor: color,
+          child: Icon(Icons.camera_alt),
+          onPressed: () {},
+        ),
+      ],
     );
   }
 }

@@ -6,6 +6,7 @@ import 'package:howdy/repository/user_repository.dart';
 
 class UserService extends ChangeNotifier {
   User user;
+  User peerUser;
   UserRepository userRepository = UserRepository();
 
   Future<void> registerNewUser(FirebaseUser firebaseUser, String name) async {

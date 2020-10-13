@@ -1,28 +1,24 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:howdy/modals/constants.dart';
+import 'package:howdy/ui/screens/signup_page.dart';
 import 'package:howdy/services/auth_service.dart';
 import 'package:howdy/services/color_service.dart';
+import 'package:howdy/ui/themes/colors.dart';
 import 'package:provider/provider.dart';
-import 'package:howdy/widget/textformwidget.dart';
+import 'package:howdy/ui/widgets/textformwidget.dart';
 
-class SignupPage extends StatefulWidget {
+class LoginPage extends StatefulWidget {
   @override
-  _SignupPageState createState() => _SignupPageState();
+  _LoginPageState createState() => _LoginPageState();
 }
 
-class _SignupPageState extends State<SignupPage> {
-  String name;
+class _LoginPageState extends State<LoginPage> {
   String email;
   String password;
-  FirebaseAuth auth = FirebaseAuth.instance;
-  Firestore firestore = Firestore.instance;
+  String loggedInUser;
 
   @override
   Widget build(BuildContext context) {
     final color = Provider.of<ColorService>(context);
-
     return Scaffold(
       appBar: AppBar(
         backgroundColor: color.primaryColor,
@@ -35,14 +31,6 @@ class _SignupPageState extends State<SignupPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                TextFormWidget(
-                  hintText: 'Name',
-                  onchanged: (value) {
-                    setState(() {
-                      name = value;
-                    });
-                  },
-                ),
                 TextFormWidget(
                   hintText: 'Email',
                   onchanged: (value) {
@@ -67,14 +55,12 @@ class _SignupPageState extends State<SignupPage> {
                   padding:
                       EdgeInsets.only(top: 10, bottom: 10, left: 80, right: 80),
                   child: Text(
-                    'Register',
+                    'Log In',
                     style: TextStyle(fontSize: 40),
                   ),
-                  color: white,
+                  color: ConstantColor.white,
                   onPressed: () {
-                    AuthService().createNewAccount(email, password, name);
-
-                    Navigator.pop(context);
+                    AuthService().signInUser(email, password);
                   },
                   shape: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(30),
@@ -83,6 +69,25 @@ class _SignupPageState extends State<SignupPage> {
                 ),
                 SizedBox(
                   height: 20,
+                ),
+                Text(
+                  "Don't have an account?",
+                  style: TextStyle(
+                    color: ConstantColor.white,
+                    fontSize: 25,
+                  ),
+                ),
+                MaterialButton(
+                  padding:
+                      EdgeInsets.only(top: 10, bottom: 10, left: 80, right: 80),
+                  child: Text(
+                    'Register here',
+                    style: TextStyle(fontSize: 30, color: ConstantColor.white),
+                  ),
+                  color: color.primaryColor,
+                  onPressed: () => Navigator.push(
+                      context, MaterialPageRoute(builder: (_) => SignupPage())),
+                  splashColor: ConstantColor.white,
                 ),
               ],
             ),

@@ -1,12 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:howdy/modals/chat.dart';
-import 'package:howdy/modals/constants.dart';
 import 'package:howdy/modals/user.dart';
-import 'package:howdy/pages/chatroom.dart';
+import 'package:howdy/ui/screens/chatroom.dart';
 import 'package:howdy/services/chat_service.dart';
 import 'package:howdy/services/color_service.dart';
 import 'package:howdy/services/user_service.dart';
+import 'package:howdy/ui/themes/colors.dart';
+import 'package:howdy/ui/themes/font_style.dart';
 import 'package:provider/provider.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -55,6 +56,7 @@ class _ChatScreenState extends State<ChatScreen> {
           itemCount: snapshot.data.documents.length,
           separatorBuilder: (_, ind) => Divider(
             thickness: 1,
+            height: 0,
             indent: MediaQuery.of(context).size.width / 4.3,
           ),
           itemBuilder: (context, index) {
@@ -107,16 +109,16 @@ class _ChatScreenState extends State<ChatScreen> {
                 children: [
                   Text(timestamp),
                   Container(
-                    padding: EdgeInsets.all(5),
-                    decoration: BoxDecoration(
-                      color: color.secondaryColor,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Text(
-                      '17',
-                      style: TextStyle(color: white),
-                    ),
-                  )
+                      padding: EdgeInsets.all(7),
+                      decoration: BoxDecoration(
+                        color: color.secondaryColor,
+                        shape: BoxShape.circle,
+                      ),
+                      child: StyledText(
+                        '5',
+                        size: 11,
+                        weight: FontWeight.w700,
+                      ))
                 ],
               ),
               onPressed: () => goToChat(
@@ -162,31 +164,35 @@ class CardTile extends StatelessWidget {
               ),
               child: Icon(
                 Icons.person_rounded,
-                color: white,
-                size: 65,
+                color: ConstantColor.white,
+                size: 55,
               ),
             ),
           ),
           Flexible(
             child: ListTile(
-              tileColor: white,
-              title: Text(
+              tileColor: ConstantColor.white,
+              title: StyledText(
                 title,
-                style: TextStyle(
-                  color: black,
-                  fontSize: 30,
-                ),
+                color: ConstantColor.black,
+                size: 22,
+                weight: FontWeight.w500,
               ),
               subtitle: Row(
                 children: [
                   subLeading ?? SizedBox(),
-                  Text(
+                  StyledText(
                     subTitle,
-                    style: TextStyle(
-                      color: black,
-                      fontSize: 18,
-                    ),
+                    color: ConstantColor.grey,
+                    size: 15,
                   ),
+                  // Text(
+                  //   subTitle,
+                  //   style: TextStyle(
+                  //     color: ConstantColor.black,
+                  //     fontSize: 18,
+                  //   ),
+                  // ),
                 ],
               ),
               trailing: trailing,

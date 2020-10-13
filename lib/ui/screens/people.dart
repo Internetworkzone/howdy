@@ -1,13 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:howdy/modals/constants.dart';
 import 'package:howdy/modals/user.dart';
-import 'package:howdy/pages/chatroom.dart';
+import 'package:howdy/ui/screens/chatroom.dart';
 import 'package:howdy/services/color_service.dart';
 import 'package:howdy/services/user_service.dart';
+import 'package:howdy/ui/themes/colors.dart';
+import 'package:howdy/ui/themes/font_style.dart';
 import 'package:provider/provider.dart';
 
 class PeopleScreen extends StatefulWidget {
+  PeopleScreen({this.isFromCall = false});
+  final bool isFromCall;
   @override
   _PeopleScreenState createState() => _PeopleScreenState();
 }
@@ -40,7 +43,7 @@ class _PeopleScreenState extends State<PeopleScreen> {
     User user = Provider.of<UserService>(context, listen: false).user;
 
     return Scaffold(
-        backgroundColor: white,
+        backgroundColor: ConstantColor.white,
         appBar: AppBar(
           backgroundColor: color.primaryColor,
           title: Column(
@@ -57,7 +60,7 @@ class _PeopleScreenState extends State<PeopleScreen> {
             if (!snapshot.hasData) {
               return Center(
                   child: CircularProgressIndicator(
-                backgroundColor: white,
+                backgroundColor: ConstantColor.white,
               ));
             }
 
@@ -65,9 +68,10 @@ class _PeopleScreenState extends State<PeopleScreen> {
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 CustomTile(
-                    circleColor: color.primaryColor,
-                    icon: Icons.group,
-                    userName: 'New group'),
+                  circleColor: color.primaryColor,
+                  icon: Icons.group,
+                  userName: widget.isFromCall ? 'New group call' : 'New group',
+                ),
                 CustomTile(
                     circleColor: color.primaryColor,
                     icon: Icons.person_add,
@@ -89,11 +93,15 @@ class _PeopleScreenState extends State<PeopleScreen> {
                               userName: userName,
                               userEmail: userEmail,
                               circleColor: Colors.grey[300],
+                              primaryColor: color.primaryColor,
+                              showIcon: widget.isFromCall,
                               onTap: () {
-                                gotoChatRoom(
-                                  peer: peerUser,
-                                  docId: docId,
-                                );
+                                if (!widget.isFromCall) {
+                                  gotoChatRoom(
+                                    peer: peerUser,
+                                    docId: docId,
+                                  );
+                                }
                               },
                             );
                     },
@@ -124,7 +132,9 @@ class CustomTile extends StatelessWidget {
     this.onTap,
     this.icon = Icons.person_rounded,
     this.circleColor = Colors.white12,
-    this.iconColor = white,
+    this.iconColor = ConstantColor.white,
+    this.primaryColor,
+    this.showIcon = false,
   }) : super(key: key);
 
   final String userName;
@@ -133,6 +143,8 @@ class CustomTile extends StatelessWidget {
   final IconData icon;
   final Color circleColor;
   final Color iconColor;
+  final Color primaryColor;
+  final bool showIcon;
 
   @override
   Widget build(BuildContext context) {
@@ -158,18 +170,35 @@ class CustomTile extends StatelessWidget {
               title: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    userName,
-                    style: TextStyle(fontSize: 22),
-                  ),
+                  BlackText(userName, size: 22),
                   userEmail != null
-                      ? Text(
+                      ? BlackText(
                           userEmail,
-                          style: TextStyle(fontSize: 18),
                         )
                       : Container(),
                 ],
               ),
+              trailing: showIcon
+                  ? Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 10),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.call,
+                            size: 30,
+                            color: primaryColor,
+                          ),
+                          SizedBox(width: 40),
+                          Icon(
+                            Icons.videocam,
+                            size: 30,
+                            color: primaryColor,
+                          ),
+                        ],
+                      ),
+                    )
+                  : SizedBox(),
               onTap: onTap,
             ),
           ),

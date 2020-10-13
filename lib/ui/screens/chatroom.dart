@@ -5,13 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:howdy/modals/call.dart';
 import 'package:howdy/modals/chat.dart';
-import 'package:howdy/modals/constants.dart';
 import 'package:howdy/modals/user.dart';
-import 'package:howdy/pages/call_screen.dart';
+import 'package:howdy/ui/screens/call_screen.dart';
 import 'package:howdy/services/call_service.dart';
 import 'package:howdy/services/chat_service.dart';
 import 'package:howdy/services/color_service.dart';
 import 'package:howdy/services/user_service.dart';
+import 'package:howdy/ui/themes/colors.dart';
+import 'package:howdy/ui/themes/font_style.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
@@ -72,6 +73,7 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    setPeerUser();
     scrollController = ScrollController();
     scrollController.addListener(() {
       scrollControl();
@@ -115,6 +117,10 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
       begin: Offset(-10, 0),
       end: Offset.zero,
     ).animate(iconSlideController);
+  }
+
+  setPeerUser() {
+    Provider.of<UserService>(context, listen: false).peerUser = widget.peerUser;
   }
 
   onCancelRecording() async {
@@ -211,7 +217,6 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
     User user = Provider.of<UserService>(context).user;
 
     return Scaffold(
-      backgroundColor: Color(0xfffafafa),
       appBar: AppBar(
         backgroundColor: color.primaryColor,
         leadingWidth: 20,
@@ -221,7 +226,7 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
               backgroundColor: Colors.grey[300],
               child: Icon(
                 Icons.person_rounded,
-                color: white,
+                color: ConstantColor.white,
                 size: 40,
               ),
             ),
@@ -262,10 +267,20 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
             return !snapshot.hasData
                 ? Center(
                     child: CircularProgressIndicator(
-                    backgroundColor: white,
+                    backgroundColor: ConstantColor.white,
                   ))
                 : Stack(
                     children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(
+                              child: FittedBox(
+                            fit: BoxFit.cover,
+                            child: Image.asset('assets/bg.png'),
+                          )),
+                        ],
+                      ),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -281,141 +296,187 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
                                 itemBuilder: (context, index) {
                                   Chat chat = Chat.fromFirestore(
                                       snapshot.data.documents[index]);
+                                  Chat previousChat;
+                                  int previousDay;
+                                  int previousMonth;
+                                  if (index + 1 != chatLength) {
+                                    previousChat = Chat.fromFirestore(
+                                        snapshot.data.documents[index + 1]);
+                                    previousDay =
+                                        previousChat.timestamp.toDate().day;
+                                    previousMonth =
+                                        previousChat.timestamp.toDate().month;
+                                  }
 
                                   bool isAuthor = chat.fromUserId == user.uid;
                                   //     snapshot.data.documents[index].data['author'];
-                                  bool isPreviousByAuthor = index ==
-                                          snapshot.data.documents.length - 1
-                                      ? false
-                                      : chat.fromUserId ==
-                                          snapshot.data.documents[index + 1]
-                                              .data['fromUserId'];
+                                  bool isPreviousByAuthor =
+                                      index == chatLength - 1
+                                          ? false
+                                          : chat.fromUserId ==
+                                              snapshot.data.documents[index + 1]
+                                                  .data['fromUserId'];
 
                                   String replyTo = chat.replyTo;
                                   String replyFor = chat.replyFor;
                                   String authorName = chat.fromUserName;
+                                  DateTime dateTime = chat.timestamp.toDate();
+                                  int hour = dateTime.hour;
+                                  int minute = dateTime.minute;
+                                  int day = dateTime.day;
+                                  int month = dateTime.month;
+                                  int year = dateTime.year;
 
-                                  return Padding(
-                                    padding: EdgeInsets.fromLTRB(
-                                        isAuthor ? 40 : 5,
-                                        2,
-                                        !isAuthor ? 40 : 13,
-                                        2),
-                                    child: GestureDetector(
-                                      onHorizontalDragStart: (_) {
-                                        setState(() {
-                                          selectedIndex = index;
-                                        });
-                                      },
-                                      onHorizontalDragUpdate:
-                                          selectedIndex == index
-                                              ? _handleDragUpdate
-                                              : null,
-                                      onHorizontalDragEnd: (details) {
-                                        if (selectedIndex == index) {
-                                          _handleDragEnd(
-                                              details,
-                                              isAuthor ? 'You' : authorName,
-                                              chat.message);
-                                        }
-                                      },
-                                      child: SlideTransition(
-                                        position: selectedIndex == index
-                                            ? replySlide
-                                            : defaultPosition,
-                                        child: Container(
-                                          child: Bubble(
-                                            color: isAuthor
-                                                ? color.bubbleColor
-                                                : white,
-                                            alignment: isAuthor
-                                                ? Alignment.topRight
-                                                : Alignment.topLeft,
-                                            nip: isPreviousByAuthor
-                                                ? BubbleNip.no
-                                                : isAuthor
-                                                    ? BubbleNip.rightTop
-                                                    : BubbleNip.leftTop,
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                replyTo != null
-                                                    ? Container(
-                                                        // width: double.infinity,
-                                                        decoration: BoxDecoration(
-                                                            // color: Color(0x22909090),
-                                                            border: Border(
-                                                                left: BorderSide(
-                                                          width: 5,
-                                                          color: color
-                                                              .primaryColor,
-                                                        ))),
-                                                        padding: EdgeInsets
-                                                            .symmetric(
-                                                                horizontal: 10,
-                                                                vertical: 6),
-                                                        child: Column(
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .start,
-                                                          children: [
-                                                            Text(
-                                                              replyTo,
-                                                              style: TextStyle(
-                                                                  fontSize: 20,
-                                                                  color: color
-                                                                      .primaryColor),
-                                                            ),
-                                                            Text(
-                                                              replyFor,
-                                                              style: TextStyle(
-                                                                  fontSize: 16),
-                                                            )
-                                                          ],
-                                                        ),
-                                                      )
-                                                    : SizedBox(),
-                                                Row(
-                                                  mainAxisSize:
-                                                      MainAxisSize.min,
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment
-                                                          .spaceBetween,
+                                  bool isPm = hour > 12;
+                                  String meridian = isPm ? 'PM' : "AM";
+
+                                  String timeStamp =
+                                      '${isPm ? hour - 12 : hour}:$minute $meridian';
+
+                                  bool isDateChanged = index == chatLength - 1
+                                      ? true
+                                      : day != previousDay ||
+                                          month != previousMonth;
+
+                                  return Column(
+                                    children: [
+                                      isDateChanged
+                                          ? Padding(
+                                              padding: EdgeInsets.symmetric(
+                                                  vertical: 12.0,
+                                                  horizontal: 100),
+                                              child: Bubble(
+                                                  color: Colors.lightBlue[100],
+                                                  child: BlackText(
+                                                      '$day/$month/$year')),
+                                            )
+                                          : SizedBox(),
+                                      Padding(
+                                        padding: EdgeInsets.fromLTRB(
+                                            isAuthor ? 40 : 13,
+                                            2,
+                                            !isAuthor ? 40 : 13,
+                                            2),
+                                        child: GestureDetector(
+                                          onHorizontalDragStart: (_) {
+                                            setState(() {
+                                              selectedIndex = index;
+                                            });
+                                          },
+                                          onHorizontalDragUpdate:
+                                              selectedIndex == index
+                                                  ? _handleDragUpdate
+                                                  : null,
+                                          onHorizontalDragEnd: (details) {
+                                            if (selectedIndex == index) {
+                                              _handleDragEnd(
+                                                  details,
+                                                  isAuthor ? 'You' : authorName,
+                                                  chat.message);
+                                            }
+                                          },
+                                          child: SlideTransition(
+                                            position: selectedIndex == index
+                                                ? replySlide
+                                                : defaultPosition,
+                                            child: Container(
+                                              child: Bubble(
+                                                color: isAuthor
+                                                    ? color.bubbleColor
+                                                    : ConstantColor.white,
+                                                alignment: isAuthor
+                                                    ? Alignment.topRight
+                                                    : Alignment.topLeft,
+                                                nip: isPreviousByAuthor
+                                                    ? BubbleNip.no
+                                                    : isAuthor
+                                                        ? BubbleNip.rightTop
+                                                        : BubbleNip.leftTop,
+                                                child: Column(
                                                   crossAxisAlignment:
-                                                      CrossAxisAlignment.end,
+                                                      CrossAxisAlignment.start,
                                                   children: [
-                                                    Flexible(
-                                                      child: Text(
-                                                        chat.message,
-                                                        style: TextStyle(
-                                                            fontSize: 25),
-                                                      ),
-                                                    ),
-                                                    Padding(
-                                                      padding: const EdgeInsets
-                                                              .symmetric(
-                                                          horizontal: 8.0),
-                                                      child: Text(
-                                                        '5:30 PM',
-                                                      ),
-                                                    ),
-                                                    isAuthor
-                                                        ? Icon(
-                                                            Icons
-                                                                .done_all_sharp,
-                                                            size: 23,
-                                                            color: Colors.blue,
+                                                    replyTo != null
+                                                        ? Container(
+                                                            // width: double.infinity,
+                                                            decoration: BoxDecoration(
+                                                                // color: Color(0x22909090),
+                                                                border: Border(
+                                                                    left: BorderSide(
+                                                              width: 5,
+                                                              color: color
+                                                                  .primaryColor,
+                                                            ))),
+                                                            padding: EdgeInsets
+                                                                .symmetric(
+                                                                    horizontal:
+                                                                        10,
+                                                                    vertical:
+                                                                        6),
+                                                            child: Column(
+                                                              crossAxisAlignment:
+                                                                  CrossAxisAlignment
+                                                                      .start,
+                                                              children: [
+                                                                StyledText(
+                                                                  replyTo,
+                                                                  color: color
+                                                                      .primaryColor,
+                                                                  size: 16,
+                                                                ),
+                                                                BlackText(
+                                                                    replyFor),
+                                                              ],
+                                                            ),
                                                           )
-                                                        : Container(),
+                                                        : SizedBox(),
+                                                    Row(
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .spaceBetween,
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .end,
+                                                      children: [
+                                                        Flexible(
+                                                          child: BlackText(
+                                                            chat.message,
+                                                          ),
+                                                        ),
+                                                        Padding(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                      .symmetric(
+                                                                  horizontal:
+                                                                      8.0),
+                                                          child: StyledText(
+                                                            timeStamp,
+                                                            color: Color(
+                                                                0xff909090),
+                                                            size: 12,
+                                                          ),
+                                                        ),
+                                                        isAuthor
+                                                            ? Icon(
+                                                                Icons
+                                                                    .done_all_sharp,
+                                                                size: 17,
+                                                                color:
+                                                                    Colors.blue,
+                                                              )
+                                                            : Container(),
+                                                      ],
+                                                    ),
                                                   ],
                                                 ),
-                                              ],
+                                              ),
                                             ),
                                           ),
                                         ),
                                       ),
-                                    ),
+                                    ],
                                   );
                                 },
                               ),
@@ -423,14 +484,14 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
                           ),
                           Container(
                             padding: EdgeInsets.fromLTRB(5, 5, 0, 5),
-                            color: Color(0xfffafafa),
+                            // color: Color(0xfffafafa),
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: <Widget>[
                                 Expanded(
                                   flex: 5,
                                   child: Material(
-                                    color: white,
+                                    color: ConstantColor.white,
                                     borderRadius: BorderRadius.only(
                                       topLeft:
                                           Radius.circular(isReplying ? 15 : 25),
@@ -564,7 +625,8 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
                                                   decoration: InputDecoration(
                                                     border: InputBorder.none,
                                                     filled: true,
-                                                    fillColor: white,
+                                                    fillColor:
+                                                        ConstantColor.white,
                                                     hintText:
                                                         'Type your message',
                                                     hintStyle: TextStyle(
@@ -642,13 +704,13 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
                                           style: BorderStyle.none,
                                         )),
                                         child: Padding(
-                                          padding: const EdgeInsets.all(10.0),
+                                          padding: const EdgeInsets.all(13.0),
                                           child: Icon(
                                             message.length >= 1
                                                 ? Icons.send
                                                 : Icons.mic,
-                                            size: 20,
-                                            color: white,
+                                            size: 25,
+                                            color: ConstantColor.white,
                                           ),
                                         ),
                                       ),

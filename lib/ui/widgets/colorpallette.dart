@@ -1,17 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:howdy/modals/constants.dart';
-import 'package:howdy/services/color_service.dart';
+import 'package:howdy/ui/themes/colors.dart';
 
 class ColorPallete extends StatelessWidget {
   const ColorPallete({
     this.ontap,
-
-    // this.showColorPallette,
-    this.palletteColor = black,
+    this.palletteColor = ConstantColor.black,
   });
 
   final Function(int color) ontap;
-
   final Color palletteColor;
 
   @override
@@ -118,7 +114,7 @@ class ColorCircle extends StatelessWidget {
         decoration: ShapeDecoration(
           shape: CircleBorder(
             side: BorderSide(
-              color: white,
+              color: ConstantColor.white,
               width: 3,
             ),
           ),
