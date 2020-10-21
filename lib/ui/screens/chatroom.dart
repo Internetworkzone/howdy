@@ -282,8 +282,6 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
                         ],
                       ),
                       Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: <Widget>[
                           Expanded(
                             child: Scrollbar(

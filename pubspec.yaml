@@ -26,6 +26,7 @@ dependencies:
   font_awesome_flutter: ^8.5.0
   firebase_core:
   firebase_auth:
+  firebase_storage:
   cloud_firestore:
   provider: ^4.0.1
   bubble: ^1.1.9+1
@@ -33,6 +34,9 @@ dependencies:
   agora_rtc_engine: ^3.1.2
   permission_handler: ^3.0.0
   audioplayers: ^0.16.1
+  camera: ^0.5.8+9
+  video_player: ^0.11.1+2
+  path_provider: ^1.5.1
   
 
 

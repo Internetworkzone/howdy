@@ -164,10 +164,13 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     ColorService color = Provider.of<ColorService>(context, listen: false);
-    return Scaffold(
-      backgroundColor: color.primaryColor,
-      body: Stack(
-        children: remoteUserId != null ? inCallView() : initialView(),
+    return WillPopScope(
+      onWillPop: () async => false,
+      child: Scaffold(
+        backgroundColor: color.primaryColor,
+        body: Stack(
+          children: remoteUserId != null ? inCallView() : initialView(),
+        ),
       ),
     );
   }

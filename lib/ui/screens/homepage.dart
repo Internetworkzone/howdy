@@ -1,12 +1,14 @@
 import 'package:audioplayers/audio_cache.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:camera/camera.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:flutter/rendering.dart';
 import 'package:howdy/modals/call.dart';
 import 'package:howdy/modals/user.dart';
 import 'package:howdy/ui/screens/call_history_screen.dart';
 import 'package:howdy/ui/screens/call_screen.dart';
+import 'package:howdy/ui/screens/camera_screen.dart';
 import 'package:howdy/ui/screens/chatscreen.dart';
 import 'package:howdy/ui/screens/people.dart';
 import 'package:howdy/services/call_service.dart';
@@ -33,75 +35,79 @@ class _HomePageState extends State<HomePage>
   AudioCache cache;
   AudioPlayer player = AudioPlayer();
   int index = 1;
+  ScrollController scrollController = ScrollController();
+  CameraController cameraController;
+  TrackingScrollController trackingScrollController =
+      TrackingScrollController();
 
-  AppBar setAppbar() {
-    final color = Provider.of<ColorService>(context, listen: false);
+  // AppBar setAppbar() {
+  //   final color = Provider.of<ColorService>(context, listen: false);
 
-    if (appbarState == 1) {
-      return AppBar(
-        backgroundColor: color.primaryColor,
-        title: Text(
-          'Howdy',
-        ),
-        actions: <Widget>[
-          AppbarIcon(
-            icon: FontAwesomeIcons.search,
-            onpressed: () {
-              setState(() {
-                appbarState = 2;
-              });
-            },
-          ),
-          PopupMenuButton(
-            icon: Icon(Icons.more_vert, size: 30),
-            onSelected: (value) {
-              if (value == 'theme') {
-                showColorPallete(color);
-              }
-            },
-            itemBuilder: (_) {
-              return showMore();
-            },
-          ),
-        ],
-        bottom: TabBar(
-          controller: tabController,
-          tabs: mytab,
-          labelStyle: TextStyle(fontSize: 17),
-          indicatorSize: TabBarIndicatorSize.tab,
-          indicatorWeight: 3.5,
-          indicatorColor: ConstantColor.white,
-          unselectedLabelColor: Color(0x88ffffff),
-        ),
-        elevation: 20,
-      );
-    } else {
-      return AppBar(
-        backgroundColor: color.primaryColor,
-        leading: AppbarIcon(
-          icon: FontAwesomeIcons.arrowLeft,
-          onpressed: () {
-            setState(() {
-              appbarState = 1;
-            });
-          },
-        ),
-        title: TextField(
-          style: TextStyle(color: color.secondaryColor),
-          decoration: InputDecoration(
-            disabledBorder: InputBorder.none,
-            enabledBorder: InputBorder.none,
-            focusedBorder: InputBorder.none,
-            hintText: 'Search',
-            hintStyle: TextStyle(
-              color: ConstantColor.white,
-            ),
-          ),
-        ),
-        elevation: 20,
-      );
-    }
-  }
+  //   if (appbarState == 1) {
+  //     return AppBar(
+  //       backgroundColor: color.primaryColor,
+  //       title: Text(
+  //         'Howdy',
+  //       ),
+  //       actions: <Widget>[
+  //         AppbarIcon(
+  //           icon: FontAwesomeIcons.search,
+  //           onpressed: () {
+  //             setState(() {
+  //               appbarState = 2;
+  //             });
+  //           },
+  //         ),
+  //         PopupMenuButton(
+  //           icon: Icon(Icons.more_vert, size: 30),
+  //           onSelected: (value) {
+  //             if (value == 'theme') {
+  //               showColorPallete(color);
+  //             }
+  //           },
+  //           itemBuilder: (_) {
+  //             return showMore();
+  //           },
+  //         ),
+  //       ],
+  //       bottom: TabBar(
+  //         controller: tabController,
+  //         tabs: mytab,
+  //         labelStyle: TextStyle(fontSize: 17),
+  //         indicatorSize: TabBarIndicatorSize.tab,
+  //         indicatorWeight: 3.5,
+  //         indicatorColor: ConstantColor.white,
+  //         unselectedLabelColor: Color(0x88ffffff),
+  //       ),
+  //       elevation: 20,
+  //     );
+  //   } else {
+  //     return AppBar(
+  //       backgroundColor: color.primaryColor,
+  //       leading: AppbarIcon(
+  //         icon: FontAwesomeIcons.arrowLeft,
+  //         onpressed: () {
+  //           setState(() {
+  //             appbarState = 1;
+  //           });
+  //         },
+  //       ),
+  //       title: TextField(
+  //         style: TextStyle(color: color.secondaryColor),
+  //         decoration: InputDecoration(
+  //           disabledBorder: InputBorder.none,
+  //           enabledBorder: InputBorder.none,
+  //           focusedBorder: InputBorder.none,
+  //           hintText: 'Search',
+  //           hintStyle: TextStyle(
+  //             color: ConstantColor.white,
+  //           ),
+  //         ),
+  //       ),
+  //       elevation: 20,
+  //     );
+  //   }
+  // }
 
   List<Tab> mytab = [
     Tab(icon: Icon(Icons.camera_alt)),
@@ -140,12 +146,40 @@ class _HomePageState extends State<HomePage>
     cache = AudioCache(
       fixedPlayer: player,
     );
+    initializeCamera();
+  }
+
+  initializeCamera() async {
+    cameraController = CameraController(
+      CameraDescription(
+        name: '0',
+        lensDirection: CameraLensDirection.back,
+        sensorOrientation: 90,
+      ),
+      ResolutionPreset.medium,
+    );
+
+    await cameraController.initialize();
   }
 
   updateIndex() {
+    print('updating tab');
+    int currentIndex = index;
     setState(() {
       index = tabController.index;
     });
+
+    if (currentIndex != index) {
+      scrollController.jumpTo(0);
+    }
+    if (index == 0) {
+      print('changing............');
+      // scrollController.animateTo(
+      //   130,
+      //   duration: Duration(seconds: 3),
+      //   curve: Curves.linear,
+      // );
+    }
   }
 
   showColorPallete(ColorService color) {
@@ -175,8 +209,18 @@ class _HomePageState extends State<HomePage>
     setState(() {});
   }
 
+  Future<bool> onBackPressed() async {
+    if (index == 1) {
+      return true;
+    } else {
+      tabController.animateTo(1);
+      return false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    // print('tab is ${trackingScrollController.offset}');
     final color = Provider.of<ColorService>(context);
     User user = Provider.of<UserService>(context, listen: false).user;
     if (user == null) {
@@ -205,95 +249,107 @@ class _HomePageState extends State<HomePage>
                 isCaller: false,
                 audioPlayer: player,
               )
-            : Scaffold(
-                backgroundColor: ConstantColor.white,
-                // appBar: setAppbar(),
-                body: NestedScrollView(
-                  // floatHeaderSlivers: true,
-                  headerSliverBuilder: (context, v) {
-                    return [
-                      SliverAppBar(
-                        backgroundColor: color.primaryColor,
-                        title: StyledText(
-                          'WhatsApp',
-                          size: 20,
-                          weight: FontWeight.w500,
+            : WillPopScope(
+                onWillPop: onBackPressed,
+                child: Scaffold(
+                  backgroundColor: ConstantColor.white,
+                  // appBar: setAppbar(),
+                  body: NestedScrollView(
+                    physics: NeverScrollableScrollPhysics(),
+                    controller: scrollController,
+                    // floatHeaderSlivers: true,
+                    headerSliverBuilder: (context, v) {
+                      return [
+                        SliverAppBar(
+                          stretchTriggerOffset: 10,
+                          onStretchTrigger: () async {
+                            print('strechedddd');
+                          },
+                          stretch: true,
+                          backgroundColor: color.primaryColor,
+                          title: StyledText(
+                            'Howdy',
+                            size: 20,
+                            weight: FontWeight.w500,
+                          ),
+                          floating: index != 0,
+                          pinned: index != 0,
+                          snap: index != 0,
+                          bottom: TabBar(
+                            controller: tabController,
+                            tabs: mytab,
+                            labelStyle: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                            ),
+                            labelPadding: EdgeInsets.all(0),
+                            indicatorPadding: EdgeInsets.all(0),
+                            indicatorSize: TabBarIndicatorSize.tab,
+                            indicatorWeight: 3.5,
+                            indicatorColor: ConstantColor.white,
+                            unselectedLabelColor: Color(0x88ffffff),
+                          ),
+                          actions: <Widget>[
+                            AppbarIcon(
+                              icon: Icons.search,
+                              size: 25,
+                              onpressed: () {
+                                setState(() {
+                                  appbarState = 2;
+                                });
+                              },
+                            ),
+                            PopupMenuButton(
+                              padding: EdgeInsets.all(0),
+                              icon: Icon(Icons.more_vert, size: 25),
+                              onSelected: (value) {
+                                if (value == 'theme') {
+                                  showColorPallete(color);
+                                }
+                              },
+                              itemBuilder: (_) {
+                                return showMore();
+                              },
+                            ),
+                          ],
                         ),
-                        floating: true,
-                        pinned: true,
-                        snap: true,
-                        bottom: TabBar(
-                          controller: tabController,
-                          tabs: mytab,
-                          labelStyle: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w800,
-                          ),
-                          labelPadding: EdgeInsets.all(0),
-                          indicatorPadding: EdgeInsets.all(0),
-                          indicatorSize: TabBarIndicatorSize.tab,
-                          indicatorWeight: 3.5,
-                          indicatorColor: ConstantColor.white,
-                          unselectedLabelColor: Color(0x88ffffff),
-                        ),
-                        actions: <Widget>[
-                          AppbarIcon(
-                            icon: Icons.search,
-                            size: 25,
-                            onpressed: () {
-                              setState(() {
-                                appbarState = 2;
-                              });
-                            },
-                          ),
-                          PopupMenuButton(
-                            padding: EdgeInsets.all(0),
-                            icon: Icon(Icons.more_vert, size: 25),
-                            onSelected: (value) {
-                              if (value == 'theme') {
-                                showColorPallete(color);
-                              }
-                            },
-                            itemBuilder: (_) {
-                              return showMore();
-                            },
-                          ),
-                        ],
-                      ),
-                    ];
-                  },
-                  body: TabBarView(
-                    controller: tabController,
-                    children: <Widget>[
-                      Center(child: CircularProgressIndicator()),
-                      ChatScreen(),
-                      StatusScreen(),
-                      CallHistoryScreen(),
-                    ],
+                      ];
+                    },
+                    body: TabBarView(
+                      controller: tabController,
+                      children: <Widget>[
+                        CameraPreview(cameraController),
+                        ChatScreen(),
+                        StatusScreen(),
+                        CallHistoryScreen(),
+                      ],
+                    ),
                   ),
-                ),
 
-                floatingActionButton: index == 2
-                    ? StatusFAB(
-                        color: color.secondaryColor,
-                      )
-                    : FloatingActionButton(
-                        backgroundColor: color.secondaryColor,
-                        onPressed: () {
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (_) => PeopleScreen(
-                                        isFromCall: index == 3,
-                                      )));
-                        },
-                        child: Icon(
-                          tabController.index == 1
-                              ? Icons.message
-                              : Icons.add_ic_call,
-                          color: ConstantColor.white,
-                        ),
-                      ),
+                  floatingActionButton: index == 0
+                      ? null
+                      : index == 2
+                          ? StatusFAB(
+                              color: color.secondaryColor,
+                            )
+                          : FloatingActionButton(
+                              backgroundColor: color.secondaryColor,
+                              onPressed: () {
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (_) => PeopleScreen(
+                                              isFromCall: index == 3,
+                                            )));
+                              },
+                              child: Icon(
+                                tabController.index == 1
+                                    ? Icons.message
+                                    : Icons.add_ic_call,
+                                color: ConstantColor.white,
+                              ),
+                            ),
+                ),
               );
       },
     );
@@ -315,13 +371,17 @@ class StatusFAB extends StatelessWidget {
             color: ConstantColor.grey,
           ),
           backgroundColor: Colors.grey[200],
-          onPressed: () {},
+          onPressed: () async {},
         ),
         SizedBox(height: 16),
         FloatingActionButton(
           backgroundColor: color,
+          heroTag: 'camera',
           child: Icon(Icons.camera_alt),
-          onPressed: () {},
+          onPressed: () {
+            Navigator.push(
+                context, MaterialPageRoute(builder: (_) => CameraScreen()));
+          },
         ),
       ],
     );

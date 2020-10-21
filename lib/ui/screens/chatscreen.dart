@@ -52,6 +52,7 @@ class _ChatScreenState extends State<ChatScreen> {
           );
         }
         return ListView.separated(
+          // physics: NeverScrollableScrollPhysics(),
           padding: EdgeInsets.only(top: 10),
           itemCount: snapshot.data.documents.length,
           separatorBuilder: (_, ind) => Divider(

@@ -32,7 +32,9 @@
 
 # Web related
 lib/generated_plugin_registrant.dart
+# App related
 lib/services/app_id.dart
+lib/ui/screens/dummy.dart
 
 # Exceptions to above rules.
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages

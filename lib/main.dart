@@ -6,18 +6,24 @@ import 'package:howdy/ui/screens/loginpage.dart';
 import 'package:howdy/services/color_service.dart';
 import 'package:howdy/services/user_service.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(MyApp());
+  SharedPreferences preferences = await SharedPreferences.getInstance();
+
+  runApp(MyApp(uid: preferences.getString('uid')));
 }
 
 class MyApp extends StatelessWidget {
+  MyApp({this.uid});
+  final String uid;
+
   Widget getUserState() {
     return StreamBuilder<FirebaseUser>(
       stream: FirebaseAuth.instance.onAuthStateChanged,
       builder: (context, snapshot) {
-        if (!snapshot.hasData && snapshot.data != null) {
+        if (!snapshot.hasData || snapshot.data != null && uid == null) {
           return LoginPage();
         } else {
           return HomePage();
