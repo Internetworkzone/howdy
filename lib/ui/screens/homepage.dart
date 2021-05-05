@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:audioplayers/audio_cache.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:camera/camera.dart';
@@ -36,9 +38,13 @@ class _HomePageState extends State<HomePage>
   AudioPlayer player = AudioPlayer();
   int index = 1;
   ScrollController scrollController = ScrollController();
+  ScrollController primaryScrollController = ScrollController();
+
   CameraController cameraController;
   TrackingScrollController trackingScrollController =
       TrackingScrollController();
+
+  double offset;
 
   // AppBar setAppbar() {
   //   final color = Provider.of<ColorService>(context, listen: false);
@@ -110,7 +116,7 @@ class _HomePageState extends State<HomePage>
   // }
 
   List<Tab> mytab = [
-    Tab(icon: Icon(Icons.camera_alt)),
+    Tab(child: Icon(Icons.camera_alt)),
     Tab(text: 'CHATS'),
     Tab(text: 'STATUS'),
     Tab(text: 'CALLS'),
@@ -140,7 +146,11 @@ class _HomePageState extends State<HomePage>
     tabController =
         TabController(vsync: this, initialIndex: index, length: mytab.length);
 
-    tabController.addListener(updateIndex);
+    tabController.animation.addListener(updateIndex);
+    primaryScrollController.addListener(() {
+      print('scrolling up');
+      scrollController.jumpTo(primaryScrollController.offset);
+    });
 
     getUserDetails();
     cache = AudioCache(
@@ -163,23 +173,22 @@ class _HomePageState extends State<HomePage>
   }
 
   updateIndex() {
-    print('updating tab');
+    print('updating tab ${tabController.animation.value}');
+
     int currentIndex = index;
     setState(() {
       index = tabController.index;
+      offset = (1 - tabController.animation.value) * 130;
     });
 
     if (currentIndex != index) {
       scrollController.jumpTo(0);
     }
-    if (index == 0) {
-      print('changing............');
-      // scrollController.animateTo(
-      //   130,
-      //   duration: Duration(seconds: 3),
-      //   curve: Curves.linear,
-      // );
+
+    if (tabController.animation.value < 1) {
+      scrollController.jumpTo(offset);
     }
+    if (index == 0) {}
   }
 
   showColorPallete(ColorService color) {
@@ -220,7 +229,7 @@ class _HomePageState extends State<HomePage>
 
   @override
   Widget build(BuildContext context) {
-    // print('tab is ${trackingScrollController.offset}');
+    // print('tab is ${scrollController.offset}');
     final color = Provider.of<ColorService>(context);
     User user = Provider.of<UserService>(context, listen: false).user;
     if (user == null) {
@@ -238,7 +247,7 @@ class _HomePageState extends State<HomePage>
         Call call;
         if (snapshot.hasData && snapshot.data.data != null) {
           call = Call.fromFirestore(snapshot.data);
-          cache.loop('ring.mp3');
+          if (call.receiverUid == user.uid) cache.loop('ring.mp3');
         } else {
           if (player != null && player.state == AudioPlayerState.PLAYING)
             player.stop();
@@ -254,79 +263,84 @@ class _HomePageState extends State<HomePage>
                 child: Scaffold(
                   backgroundColor: ConstantColor.white,
                   // appBar: setAppbar(),
-                  body: NestedScrollView(
-                    physics: NeverScrollableScrollPhysics(),
+                  body: CustomScrollView(
                     controller: scrollController,
-                    // floatHeaderSlivers: true,
-                    headerSliverBuilder: (context, v) {
-                      return [
-                        SliverAppBar(
-                          stretchTriggerOffset: 10,
-                          onStretchTrigger: () async {
-                            print('strechedddd');
-                          },
-                          stretch: true,
-                          backgroundColor: color.primaryColor,
-                          title: StyledText(
-                            'Howdy',
-                            size: 20,
-                            weight: FontWeight.w500,
-                          ),
-                          floating: index != 0,
-                          pinned: index != 0,
-                          snap: index != 0,
-                          bottom: TabBar(
-                            controller: tabController,
-                            tabs: mytab,
-                            labelStyle: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w800,
-                            ),
-                            labelPadding: EdgeInsets.all(0),
-                            indicatorPadding: EdgeInsets.all(0),
-                            indicatorSize: TabBarIndicatorSize.tab,
-                            indicatorWeight: 3.5,
-                            indicatorColor: ConstantColor.white,
-                            unselectedLabelColor: Color(0x88ffffff),
-                          ),
-                          actions: <Widget>[
-                            AppbarIcon(
-                              icon: Icons.search,
-                              size: 25,
-                              onpressed: () {
-                                setState(() {
-                                  appbarState = 2;
-                                });
-                              },
-                            ),
-                            PopupMenuButton(
-                              padding: EdgeInsets.all(0),
-                              icon: Icon(Icons.more_vert, size: 25),
-                              onSelected: (value) {
-                                if (value == 'theme') {
-                                  showColorPallete(color);
-                                }
-                              },
-                              itemBuilder: (_) {
-                                return showMore();
-                              },
-                            ),
-                          ],
+                    physics: NeverScrollableScrollPhysics(),
+                    // shrinkWrap: true,
+                    slivers: [
+                      SliverAppBar(
+                        stretchTriggerOffset: 10,
+                        onStretchTrigger: () async {
+                          print('strechedddd');
+                        },
+                        stretch: true,
+                        backgroundColor: color.primaryColor,
+                        title: StyledText(
+                          'Howdy',
+                          size: 20,
+                          weight: FontWeight.w500,
                         ),
-                      ];
-                    },
-                    body: TabBarView(
-                      controller: tabController,
-                      children: <Widget>[
-                        CameraPreview(cameraController),
-                        ChatScreen(),
-                        StatusScreen(),
-                        CallHistoryScreen(),
-                      ],
-                    ),
+                        floating: tabController.animation.value >= 1,
+                        pinned: tabController.animation.value >= 1,
+                        snap: tabController.animation.value >= 1,
+                        bottom: TabBar(
+                          controller: tabController,
+                          tabs: mytab,
+                          labelStyle: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                          ),
+                          labelPadding: EdgeInsets.all(0),
+                          indicatorPadding: EdgeInsets.all(0),
+                          indicatorSize: TabBarIndicatorSize.tab,
+                          indicatorWeight: 3.5,
+                          indicatorColor: ConstantColor.white,
+                          unselectedLabelColor: Color(0x88ffffff),
+                        ),
+                        actions: <Widget>[
+                          AppbarIcon(
+                            icon: Icons.search,
+                            size: 25,
+                            onpressed: () {
+                              setState(() {
+                                appbarState = 2;
+                              });
+                            },
+                          ),
+                          PopupMenuButton(
+                            padding: EdgeInsets.all(0),
+                            icon: Icon(Icons.more_vert, size: 25),
+                            onSelected: (value) {
+                              if (value == 'theme') {
+                                showColorPallete(color);
+                              }
+                            },
+                            itemBuilder: (_) {
+                              return showMore();
+                            },
+                          ),
+                        ],
+                      ),
+                      SliverFillRemaining(
+                        fillOverscroll: true,
+                        hasScrollBody: true,
+                        child: PrimaryScrollController(
+                          controller: primaryScrollController,
+                          child: TabBarView(
+                            controller: tabController,
+                            children: <Widget>[
+                              CameraPreview(cameraController),
+                              ChatScreen(),
+                              StatusScreen(),
+                              CallHistoryScreen(),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
 
-                  floatingActionButton: index == 0
+                  floatingActionButton: tabController.animation.value < 1
                       ? null
                       : index == 2
                           ? StatusFAB(

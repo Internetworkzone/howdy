@@ -86,6 +86,11 @@ class StatusScreen extends StatelessWidget {
                                       MediaQuery.of(context).size.width)));
                       },
                     ),
+                    Container(
+                      padding: EdgeInsets.all(7),
+                      color: Colors.grey[200],
+                      child: BlackText('Recent updates'),
+                    ),
                     ListView.builder(
                         shrinkWrap: true,
                         physics: NeverScrollableScrollPhysics(),

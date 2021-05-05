@@ -29,6 +29,8 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
         return !snapshot.hasData
             ? Center(child: CircularProgressIndicator())
             : ListView.separated(
+                // physics: NeverScrollableScrollPhysics(),
+                // shrinkWrap: true,
                 padding: EdgeInsets.only(top: 10),
                 separatorBuilder: (_, ind) => Divider(
                       thickness: 1,
